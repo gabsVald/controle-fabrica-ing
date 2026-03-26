@@ -13,7 +13,7 @@ import ServicosScreen from '../screens/ServicosScreen';
 import ComprasScreen from '../screens/ComprasScreen';
 import PontoEntradaScreen from '../screens/PontoEntradaScreen';
 import PontoSaidaScreen from '../screens/PontoSaidaScreen';
-import ChamadosScreen from '../screens/ChamadosScreen'; // NOVA TELA
+import ChamadosScreen from '../screens/ChamadosScreen';
 import ComprasGestorScreen from '../screens/ComprasGestorScreen';
 import RelatorioPontoScreen from '../screens/RelatorioPontoScreen';
 
@@ -30,8 +30,8 @@ function EmployeeTabs() {
         tabBarStyle: { 
           height: 65, 
           paddingBottom: 10,
-          backgroundColor: isDarkMode ? '#0f172a' : '#fff',
-          borderTopColor: isDarkMode ? '#334155' : '#e2e8f0'
+          backgroundColor: isDarkMode ? '#121212' : '#fff', // Corrigido para Preto Real
+          borderTopColor: isDarkMode ? '#333' : '#e2e8f0'
         } 
       }}
     >
@@ -53,12 +53,14 @@ function ManagerTabs() {
         tabBarStyle: { 
           height: 65, 
           paddingBottom: 10,
-          backgroundColor: isDarkMode ? '#0f172a' : '#fff',
-          borderTopColor: isDarkMode ? '#334155' : '#e2e8f0'
+          backgroundColor: isDarkMode ? '#121212' : '#fff', // Corrigido para Preto Real
+          borderTopColor: isDarkMode ? '#333' : '#e2e8f0'
         } 
       }}
     >
       <Tab.Screen name="Relatórios" component={RelatorioPontoScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="document-text" size={24} color={color}/> }} />
+      {/* ABA DE CHAMADOS ADICIONADA PARA O GESTOR */}
+      <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="build" size={24} color={color}/> }} />
       <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="warning" size={24} color={color}/> }} />
       <Tab.Screen name="Compras" component={ComprasGestorScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="cart" size={24} color={color}/> }} />
     </Tab.Navigator>

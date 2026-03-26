@@ -25,7 +25,7 @@ export default function ChamadosScreen({ navigation }) {
     const agora = new Date();
     setDadosAtividade({ inicio: agora.toISOString(), setor: item.setor, subsetor: item.subsetor });
     
-    setRegistrosPonto([{ id: Math.random().toString(), nome: loggedUser.nome, data: agora.toLocaleDateString('pt-BR'), horaEntrada: agora.toLocaleTimeString(), setor: item.setor, subsetor: item.subsetor, status: 'trabalhando' }, ...registrosPonto]);
+    setRegistrosPonto([{ id: Math.random().toString(), nome: loggedUser.nome, data: agora.toLocaleDateString('pt-BR'), horaEntrada: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), setor: item.setor, subsetor: item.subsetor, status: 'trabalhando' }, ...registrosPonto]);
     setStatusPonto('trabalhando');
     setChamados(chamados.filter(c => c.id !== item.id));
     navigation.navigate('Início');
@@ -60,9 +60,13 @@ export default function ChamadosScreen({ navigation }) {
                 <View style={[styles.card, isDarkMode && styles.cardDark]}>
                   <Text style={styles.tag}>{item.setor}</Text>
                   <Text style={[styles.desc, isDarkMode && styles.textDark]}>{item.descricao}</Text>
-                  <TouchableOpacity style={styles.btnStart} onPress={() => comecarChamado(item)}>
-                    <Text style={styles.btnText}>COMEÇAR SERVIÇO</Text>
-                  </TouchableOpacity>
+                  
+                  {/* TRAVA DE SEGURANÇA: GESTOR NÃO VÊ O BOTÃO "COMEÇAR" */}
+                  {loggedUser?.perfil !== 'gestor' && (
+                    <TouchableOpacity style={styles.btnStart} onPress={() => comecarChamado(item)}>
+                      <Text style={styles.btnText}>COMEÇAR SERVIÇO</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             />
@@ -75,21 +79,21 @@ export default function ChamadosScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  bgDark: { backgroundColor: '#1e293b' },
+  bgDark: { backgroundColor: '#121212' }, // PRETO REAL
   btnCreate: { backgroundColor: '#2563eb', padding: 15, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', width: '80%', marginBottom: 20 },
   btnText: { color: '#fff', fontWeight: 'bold', marginLeft: 10 },
   form: { backgroundColor: '#fff', padding: 20, borderRadius: 15 },
-  formDark: { backgroundColor: '#0f172a' },
-  label: { fontWeight: 'bold', marginBottom: 5 },
-  input: { borderWidth: 1, borderColor: '#ddd', padding: 12, borderRadius: 10, marginBottom: 15 },
-  inputDark: { borderColor: '#334155', color: '#fff' },
+  formDark: { backgroundColor: '#1e1e1e' }, // CINZA CHUMBO
+  label: { fontWeight: 'bold', marginBottom: 5, color: '#1e293b' },
+  input: { borderWidth: 1, borderColor: '#ddd', padding: 12, borderRadius: 10, marginBottom: 15, color: '#1e293b' },
+  inputDark: { borderColor: '#333', color: '#fff', backgroundColor: '#121212' },
   textDark: { color: '#fff' },
   btnSave: { backgroundColor: '#16a34a', padding: 12, borderRadius: 10, marginLeft: 10, width: 120, alignItems: 'center' },
   btnCancel: { backgroundColor: '#ef4444', padding: 12, borderRadius: 10, width: 120, alignItems: 'center' },
   card: { backgroundColor: '#fff', padding: 15, borderRadius: 15, marginBottom: 15, elevation: 2 },
-  cardDark: { backgroundColor: '#0f172a' },
+  cardDark: { backgroundColor: '#1e1e1e' }, // CINZA CHUMBO
   tag: { color: '#2563eb', fontWeight: 'bold', fontSize: 12 },
-  desc: { fontSize: 16, fontWeight: 'bold', marginVertical: 10 },
+  desc: { fontSize: 16, fontWeight: 'bold', marginVertical: 10, color: '#1e293b' },
   btnStart: { backgroundColor: '#1e293b', padding: 12, borderRadius: 10, alignItems: 'center', alignSelf: 'center', width: '70%' },
   empty: { textAlign: 'center', color: '#94a3b8', marginTop: 30 }
 });
