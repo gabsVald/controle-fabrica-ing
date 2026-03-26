@@ -13,72 +13,54 @@ import ServicosScreen from '../screens/ServicosScreen';
 import ComprasScreen from '../screens/ComprasScreen';
 import PontoEntradaScreen from '../screens/PontoEntradaScreen';
 import PontoSaidaScreen from '../screens/PontoSaidaScreen';
-import HomeGestor from '../screens/HomeGestor';
+import ChamadosScreen from '../screens/ChamadosScreen'; // NOVA TELA
 import ComprasGestorScreen from '../screens/ComprasGestorScreen';
 import RelatorioPontoScreen from '../screens/RelatorioPontoScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Menu de Abas do Funcionário (Item 22 do Doc)
 function EmployeeTabs() {
+  const { isDarkMode } = useContext(AppContext);
   return (
     <Tab.Navigator 
       screenOptions={{ 
         headerShown: false, 
         tabBarActiveTintColor: '#2563eb',
-        tabBarStyle: { height: 65, paddingBottom: 10 } 
+        tabBarStyle: { 
+          height: 65, 
+          paddingBottom: 10,
+          backgroundColor: isDarkMode ? '#0f172a' : '#fff',
+          borderTopColor: isDarkMode ? '#334155' : '#e2e8f0'
+        } 
       }}
     >
-      <Tab.Screen 
-        name="Início" 
-        component={HomeFuncionario} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="home" size={24} color={color}/> }} 
-      />
-      <Tab.Screen 
-        name="Pendentes" 
-        component={ServicosScreen} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="time" size={24} color={color}/> }} 
-      />
-      <Tab.Screen 
-        name="Compras" 
-        component={ComprasScreen} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="cash" size={24} color={color}/> }} 
-      />
+      <Tab.Screen name="Início" component={HomeFuncionario} options={{ tabBarIcon: ({color}) => <Ionicons name="home" size={24} color={color}/> }} />
+      <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="build" size={24} color={color}/> }} />
+      <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="time" size={24} color={color}/> }} />
+      <Tab.Screen name="Compras" component={ComprasScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="cash" size={24} color={color}/> }} />
     </Tab.Navigator>
   );
 }
 
-// Menu de Abas do Gestor (Dashboard como tela principal)
 function ManagerTabs() {
+  const { isDarkMode } = useContext(AppContext);
   return (
     <Tab.Navigator 
       screenOptions={{ 
         headerShown: false, 
-        tabBarActiveTintColor: '#1e293b',
-        tabBarStyle: { height: 65, paddingBottom: 10 } 
+        tabBarActiveTintColor: isDarkMode ? '#38bdf8' : '#1e293b',
+        tabBarStyle: { 
+          height: 65, 
+          paddingBottom: 10,
+          backgroundColor: isDarkMode ? '#0f172a' : '#fff',
+          borderTopColor: isDarkMode ? '#334155' : '#e2e8f0'
+        } 
       }}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={HomeGestor} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="stats-chart" size={24} color={color}/> }} 
-      />
-      <Tab.Screen 
-        name="Pendentes" 
-        component={ServicosScreen} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="warning" size={24} color={color}/> }} 
-      />
-      <Tab.Screen 
-        name="Compras" 
-        component={ComprasGestorScreen} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="cart" size={24} color={color}/> }} 
-      />
-      <Tab.Screen 
-        name="Relatórios" 
-        component={RelatorioPontoScreen} 
-        options={{ tabBarIcon: ({color}) => <Ionicons name="document-text" size={24} color={color}/> }} 
-      />
+      <Tab.Screen name="Relatórios" component={RelatorioPontoScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="document-text" size={24} color={color}/> }} />
+      <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="warning" size={24} color={color}/> }} />
+      <Tab.Screen name="Compras" component={ComprasGestorScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="cart" size={24} color={color}/> }} />
     </Tab.Navigator>
   );
 }
@@ -87,15 +69,10 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
-        {/* Telas Iniciais */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Cadastro" component={CadastroScreen} />
-
-        {/* Fluxos por Perfil */}
         <Stack.Screen name="MainFunc" component={EmployeeTabs} />
         <Stack.Screen name="MainGestor" component={ManagerTabs} />
-
-        {/* Telas de Ação (Abertas fora das abas para foco total) */}
         <Stack.Screen name="PontoEntrada" component={PontoEntradaScreen} />
         <Stack.Screen name="PontoSaida" component={PontoSaidaScreen} />
       </Stack.Navigator>
