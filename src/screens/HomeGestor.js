@@ -1,11 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeGestor({ navigation }) {
-  // Adicionado setRegistrosPonto e setServicosIncompletos para permitir a limpeza
   const { 
     registrosPonto, 
     setRegistrosPonto, 
@@ -13,7 +12,11 @@ export default function HomeGestor({ navigation }) {
     setServicosIncompletos, 
     solicitacoesCompra, 
     setSolicitacoesCompra, 
-    setLoggedUser 
+    setLoggedUser,
+    statusPonto,
+    setStatusPonto,
+    setDadosAtividade,
+    loggedUser
   } = useContext(AppContext);
 
   const removerCompra = (id) => {
@@ -21,7 +24,6 @@ export default function HomeGestor({ navigation }) {
     Alert.alert("Sucesso", "Solicitação removida.");
   };
 
-  // Função para limpar o dashboard (Histórico e Pendências)
   const limparDashboard = () => {
     Alert.alert(
       "Limpar Dashboard",
@@ -41,6 +43,38 @@ export default function HomeGestor({ navigation }) {
     );
   };
 
+  // Função para o Gestor assumir uma tarefa pendente
+  const retomarTarefaComoGestor = (item) => {
+    if (statusPonto === 'trabalhando') {
+      Alert.alert("Ação Bloqueada", "Você já tem uma atividade em andamento.");
+      return;
+    }
+
+    const agora = new Date();
+    
+    setDadosAtividade({
+      inicio: agora.toISOString(),
+      setor: item.setor,
+      subsetor: item.subsetor
+    });
+
+    const novoRegistro = {
+      id: Math.random().toString(),
+      nome: `${loggedUser?.nome} (Gestor)`,
+      data: agora.toLocaleDateString('pt-BR'),
+      horaEntrada: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      setor: item.setor,
+      subsetor: item.subsetor,
+      status: 'trabalhando'
+    };
+
+    setRegistrosPonto([novoRegistro, ...registrosPonto]);
+    setServicosIncompletos(servicosIncompletos.filter(s => s.id !== item.id));
+    setStatusPonto('trabalhando');
+
+    Alert.alert("Sucesso", "Tarefa assumida! O cronômetro foi iniciado na sua Home.");
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <HeaderApp onBack={() => { setLoggedUser(null); navigation.navigate('Login'); }} title="Gestão de Fábrica" />
@@ -48,7 +82,6 @@ export default function HomeGestor({ navigation }) {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Painel Geral</Text>
-          {/* Novo Botão de Limpeza */}
           <TouchableOpacity style={styles.btnTrash} onPress={limparDashboard}>
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
             <Text style={styles.btnTrashText}>Limpar Tarefas</Text>
@@ -66,7 +99,30 @@ export default function HomeGestor({ navigation }) {
           </View>
         </View>
 
-        <Text style={styles.subTitle}>Solicitações de Compra</Text>
+        {/* SEÇÃO DE TAREFAS PENDENTES (NOVO) */}
+        <Text style={styles.subTitle}>Tarefas Pendentes</Text>
+        {servicosIncompletos.length === 0 ? (
+          <Text style={styles.empty}>Nenhuma tarefa em aberto.</Text>
+        ) : (
+          servicosIncompletos.map(item => (
+            <View key={item.id} style={styles.cardTarefa}>
+              <View style={{flex: 1}}>
+                <Text style={styles.cardItem}>{item.descricao}</Text>
+                <Text style={styles.cardAuthor}>{item.setor} › {item.subsetor}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.btnRetomar} 
+                onPress={() => retomarTarefaComoGestor(item)}
+              >
+                <Ionicons name="play" size={18} color="#fff" />
+                <Text style={styles.btnRetomarText}>Retomar</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+
+        {/* SEÇÃO DE COMPRAS */}
+        <Text style={[styles.subTitle, { marginTop: 25 }]}>Solicitações de Compra</Text>
         {solicitacoesCompra.length === 0 ? (
           <Text style={styles.empty}>Nenhuma solicitação pendente.</Text>
         ) : (
@@ -104,9 +160,12 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 13, color: '#64748b', fontWeight: 'bold', marginTop: 5 },
   subTitle: { fontSize: 18, fontWeight: '900', color: '#1e293b', marginBottom: 15 },
   card: { backgroundColor: '#fff', padding: 20, borderRadius: 15, flexDirection: 'row', alignItems: 'center', marginBottom: 12, elevation: 1 },
+  cardTarefa: { backgroundColor: '#fff', padding: 15, borderRadius: 15, flexDirection: 'row', alignItems: 'center', marginBottom: 12, borderLeftWidth: 5, borderLeftColor: '#2563eb', elevation: 1 },
   cardItem: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
   cardAuthor: { fontSize: 12, color: '#94a3b8', marginTop: 3 },
   btnRemove: { padding: 5 },
+  btnRetomar: { backgroundColor: '#2563eb', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
+  btnRetomarText: { color: '#fff', fontWeight: 'bold', fontSize: 12, marginLeft: 5 },
   btnNav: { backgroundColor: '#1e293b', padding: 22, borderRadius: 15, marginTop: 25, alignItems: 'center', elevation: 2 },
   btnNavText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   empty: { textAlign: 'center', color: '#94a3b8', marginTop: 10, fontStyle: 'italic' }
