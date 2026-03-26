@@ -17,7 +17,8 @@ export default function ComprasGestorScreen() {
           <View key={c.id} style={styles.card}>
             <View style={{ flex: 1 }}>
               <Text style={styles.itemName}>{c.item}</Text>
-              <Text style={styles.itemSub}>{c.qtd} un • Por: {c.autor}</Text>
+              {/* Ajustado de c.qtd para c.quantidade para bater com o estado do formulário */}
+              <Text style={styles.itemSub}>{c.quantidade} • Por: {c.autor}</Text>
             </View>
             <View style={styles.actions}>
               <TouchableOpacity style={styles.btnCheck} onPress={() => remover(c.id)}>

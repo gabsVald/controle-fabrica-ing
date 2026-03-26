@@ -10,13 +10,20 @@ export default function HomeFuncionario({ navigation }) {
   useEffect(() => {
     let interval;
     if (statusPonto === 'trabalhando' && dadosAtividade?.inicio) {
-      interval = setInterval(() => {
-        const diff = Math.floor((new Date() - new Date(dadosAtividade.inicio)) / 1000);
-        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
-        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-        const s = (diff % 60).toString().padStart(2, '0');
-        setTimer(`${h}:${m}:${s}`);
-      }, 1000);
+      const dataInicio = new Date(dadosAtividade.inicio);
+      
+      // Verifica se a data é válida antes de rodar o intervalo
+      if (!isNaN(dataInicio.getTime())) {
+        interval = setInterval(() => {
+          const diff = Math.floor((new Date() - dataInicio) / 1000);
+          if (diff < 0) return; // Evita valores negativos em erros de fuso horário
+
+          const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+          const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+          const s = (diff % 60).toString().padStart(2, '0');
+          setTimer(`${h}:${m}:${s}`);
+        }, 1000);
+      }
     }
     return () => clearInterval(interval);
   }, [statusPonto, dadosAtividade]);

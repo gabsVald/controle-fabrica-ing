@@ -16,8 +16,12 @@ export default function PontoSaidaScreen({ navigation }) {
 
   const finalizar = (tipo) => {
     const agora = new Date();
-    setRegistrosPonto(registrosPonto.map(r => (r.status === 'trabalhando' && r.nome === loggedUser.nome) ? 
-      {...r, saida: agora.toLocaleTimeString(), status: tipo === 'completo' ? 'Completo' : 'Incompleto'} : r
+    const horaSaida = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // Segurança: Atualiza apenas o registro que está ATIVO (trabalhando) deste usuário específico
+    setRegistrosPonto(registrosPonto.map(r => 
+      (r.status === 'trabalhando' && r.nome === loggedUser.nome) ? 
+      {...r, saida: horaSaida, status: tipo === 'completo' ? 'Completo' : 'Incompleto'} : r
     ));
 
     if (tipo === 'incompleto') {
@@ -34,7 +38,7 @@ export default function PontoSaidaScreen({ navigation }) {
   return (
     <SafeAreaView style={{flex:1, backgroundColor:'#f8fafc'}}>
       <HeaderApp onBack={() => navigation.goBack()} />
-      <ScrollView padding={20}>
+      <ScrollView contentContainerStyle={{padding: 20}}>
         {passo === 1 ? (
           <View>
             <Text style={styles.title}>Finalizar Atividade</Text>
