@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import React, { useContext, useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Alert, TextInput } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,163 +10,140 @@ export default function HomeGestor({ navigation }) {
     setRegistrosPonto, 
     servicosIncompletos, 
     setServicosIncompletos, 
-    solicitacoesCompra, 
-    setSolicitacoesCompra, 
-    setLoggedUser,
-    statusPonto,
-    setStatusPonto,
-    setDadosAtividade,
-    loggedUser
+    setLoggedUser 
   } = useContext(AppContext);
 
-  const removerCompra = (id) => {
-    setSolicitacoesCompra(solicitacoesCompra.filter(c => c.id !== id));
-    Alert.alert("Sucesso", "Solicitação removida.");
-  };
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todos'); // todos, trabalhando, finalizado
 
-  const limparDashboard = () => {
-    Alert.alert(
-      "Limpar Dashboard",
-      "Deseja realmente apagar todo o histórico de tarefas e registros? Esta ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Limpar Tudo", 
-          style: "destructive", 
-          onPress: () => {
-            setRegistrosPonto([]);
-            setServicosIncompletos([]);
-            Alert.alert("Sucesso", "O dashboard foi resetado.");
-          } 
-        }
-      ]
-    );
-  };
-
-  // Função para o Gestor assumir uma tarefa pendente
-  const retomarTarefaComoGestor = (item) => {
-    if (statusPonto === 'trabalhando') {
-      Alert.alert("Ação Bloqueada", "Você já tem uma atividade em andamento.");
-      return;
-    }
-
-    const agora = new Date();
-    
-    setDadosAtividade({
-      inicio: agora.toISOString(),
-      setor: item.setor,
-      subsetor: item.subsetor
+  // Lógica de Filtro (Memoizada para performance)
+  const dadosFiltrados = useMemo(() => {
+    return registrosPonto.filter(item => {
+      const matchesBusca = item.nome.toLowerCase().includes(busca.toLowerCase()) || 
+                           item.setor.toLowerCase().includes(busca.toLowerCase());
+      const matchesStatus = filtroStatus === 'todos' || item.status === filtroStatus;
+      return matchesBusca && matchesStatus;
     });
+  }, [busca, filtroStatus, registrosPonto]);
 
-    const novoRegistro = {
-      id: Math.random().toString(),
-      nome: `${loggedUser?.nome} (Gestor)`,
-      data: agora.toLocaleDateString('pt-BR'),
-      horaEntrada: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      setor: item.setor,
-      subsetor: item.subsetor,
-      status: 'trabalhando'
-    };
-
-    setRegistrosPonto([novoRegistro, ...registrosPonto]);
-    setServicosIncompletos(servicosIncompletos.filter(s => s.id !== item.id));
-    setStatusPonto('trabalhando');
-
-    Alert.alert("Sucesso", "Tarefa assumida! O cronômetro foi iniciado na sua Home.");
+  const limparDados = () => {
+    Alert.alert("Limpar Registros", "Apagar todo o histórico?", [
+      { text: "Cancelar" },
+      { text: "Limpar", style: "destructive", onPress: () => { setRegistrosPonto([]); setServicosIncompletos([]); }}
+    ]);
   };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.cardRegistro}>
+      <View style={styles.statusIndicator}>
+        <Ionicons 
+          name={item.status === 'trabalhando' ? "play-circle" : "checkmark-circle"} 
+          size={28} 
+          color={item.status === 'trabalhando' ? "#2563eb" : "#10b981"} 
+        />
+      </View>
+      <View style={{ flex: 1 }}>
+        <View style={styles.row}>
+          <Text style={styles.nomeFunc}>{item.nome}</Text>
+          <Text style={styles.horaBadge}>{item.horaEntrada}</Text>
+        </View>
+        <Text style={styles.infoTarefa}>{item.setor} › {item.subsetor}</Text>
+        <Text style={styles.dataText}>{item.data}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
-      <HeaderApp onBack={() => { setLoggedUser(null); navigation.navigate('Login'); }} title="Gestão de Fábrica" />
+      <HeaderApp onBack={() => { setLoggedUser(null); navigation.navigate('Login'); }} title="Monitoramento" />
       
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Painel Geral</Text>
-          <TouchableOpacity style={styles.btnTrash} onPress={limparDashboard}>
+      <View style={styles.container}>
+        {/* BARRA DE BUSCA */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color="#94a3b8" />
+          <TextInput 
+            style={styles.input}
+            placeholder="Buscar funcionário ou setor..."
+            value={busca}
+            onChangeText={setBusca}
+          />
+          {busca !== '' && (
+            <TouchableOpacity onPress={() => setBusca('')}>
+              <Ionicons name="close-circle" size={20} color="#94a3b8" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* FILTROS RAPIDOS */}
+        <View style={styles.filterRow}>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filtroStatus === 'todos' && styles.filterBtnActive]} 
+            onPress={() => setFiltroStatus('todos')}
+          >
+            <Text style={[styles.filterText, filtroStatus === 'todos' && styles.filterTextActive]}>Todos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filtroStatus === 'trabalhando' && styles.filterBtnActive]} 
+            onPress={() => setFiltroStatus('trabalhando')}
+          >
+            <Text style={[styles.filterText, filtroStatus === 'trabalhando' && styles.filterTextActive]}>Ativos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filtroStatus === 'finalizado' && styles.filterBtnActive]} 
+            onPress={() => setFiltroStatus('finalizado')}
+          >
+            <Text style={[styles.filterText, filtroStatus === 'finalizado' && styles.filterTextActive]}>Concluídos</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.btnTrash} onPress={limparDados}>
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            <Text style={styles.btnTrashText}>Limpar Tarefas</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text style={styles.num}>{registrosPonto.filter(r => r.status === 'trabalhando').length}</Text>
-            <Text style={styles.statLabel}>No Posto</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.num}>{solicitacoesCompra.length}</Text>
-            <Text style={styles.statLabel}>Compras</Text>
-          </View>
-        </View>
-
-        {/* SEÇÃO DE TAREFAS PENDENTES (NOVO) */}
-        <Text style={styles.subTitle}>Tarefas Pendentes</Text>
-        {servicosIncompletos.length === 0 ? (
-          <Text style={styles.empty}>Nenhuma tarefa em aberto.</Text>
-        ) : (
-          servicosIncompletos.map(item => (
-            <View key={item.id} style={styles.cardTarefa}>
-              <View style={{flex: 1}}>
-                <Text style={styles.cardItem}>{item.descricao}</Text>
-                <Text style={styles.cardAuthor}>{item.setor} › {item.subsetor}</Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.btnRetomar} 
-                onPress={() => retomarTarefaComoGestor(item)}
-              >
-                <Ionicons name="play" size={18} color="#fff" />
-                <Text style={styles.btnRetomarText}>Retomar</Text>
-              </TouchableOpacity>
+        <FlatList
+          data={dadosFiltrados}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.empty}>Nenhum registro encontrado.</Text>
             </View>
-          ))
-        )}
-
-        {/* SEÇÃO DE COMPRAS */}
-        <Text style={[styles.subTitle, { marginTop: 25 }]}>Solicitações de Compra</Text>
-        {solicitacoesCompra.length === 0 ? (
-          <Text style={styles.empty}>Nenhuma solicitação pendente.</Text>
-        ) : (
-          solicitacoesCompra.map(c => (
-            <View key={c.id} style={styles.card}>
-              <View style={{flex:1}}>
-                <Text style={styles.cardItem}>{c.item}</Text>
-                <Text style={styles.cardAuthor}>Por: {c.autor}</Text>
-              </View>
-              <TouchableOpacity style={styles.btnRemove} onPress={() => removerCompra(c.id)}>
-                <Ionicons name="close-circle" size={22} color="#ef4444" />
-              </TouchableOpacity>
-            </View>
-          ))
-        )}
-        
-        <TouchableOpacity style={styles.btnNav} onPress={() => navigation.navigate('RelatorioPonto')}>
-          <Text style={styles.btnNavText}>VER RELATÓRIO COMPLETO</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          }
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f8fafc' },
-  container: { padding: 25 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  title: { fontSize: 26, fontWeight: '900', color: '#1e293b' },
-  btnTrash: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fee2e2', padding: 10, borderRadius: 12 },
-  btnTrashText: { color: '#ef4444', fontWeight: 'bold', fontSize: 12, marginLeft: 5 },
-  stats: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
-  stat: { backgroundColor: '#fff', padding: 20, borderRadius: 20, width: '48%', alignItems: 'center', elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
-  num: { fontSize: 32, fontWeight: 'bold', color: '#2563eb' },
-  statLabel: { fontSize: 13, color: '#64748b', fontWeight: 'bold', marginTop: 5 },
-  subTitle: { fontSize: 18, fontWeight: '900', color: '#1e293b', marginBottom: 15 },
-  card: { backgroundColor: '#fff', padding: 20, borderRadius: 15, flexDirection: 'row', alignItems: 'center', marginBottom: 12, elevation: 1 },
-  cardTarefa: { backgroundColor: '#fff', padding: 15, borderRadius: 15, flexDirection: 'row', alignItems: 'center', marginBottom: 12, borderLeftWidth: 5, borderLeftColor: '#2563eb', elevation: 1 },
-  cardItem: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
-  cardAuthor: { fontSize: 12, color: '#94a3b8', marginTop: 3 },
-  btnRemove: { padding: 5 },
-  btnRetomar: { backgroundColor: '#2563eb', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
-  btnRetomarText: { color: '#fff', fontWeight: 'bold', fontSize: 12, marginLeft: 5 },
-  btnNav: { backgroundColor: '#1e293b', padding: 22, borderRadius: 15, marginTop: 25, alignItems: 'center', elevation: 2 },
-  btnNavText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 10, fontStyle: 'italic' }
+  container: { flex: 1, paddingHorizontal: 15, paddingTop: 15 },
+  searchBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#fff', 
+    paddingHorizontal: 15, 
+    borderRadius: 12, 
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 15
+  },
+  input: { flex: 1, marginLeft: 10, fontSize: 15, color: '#1e293b' },
+  filterRow: { flexDirection: 'row', marginBottom: 20, alignItems: 'center' },
+  filterBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8, backgroundColor: '#e2e8f0' },
+  filterBtnActive: { backgroundColor: '#1e293b' },
+  filterText: { fontSize: 12, fontWeight: 'bold', color: '#64748b' },
+  filterTextActive: { color: '#fff' },
+  btnTrash: { marginLeft: 'auto', backgroundColor: '#fee2e2', padding: 10, borderRadius: 10 },
+  cardRegistro: { backgroundColor: '#fff', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 12, elevation: 1 },
+  statusIndicator: { marginRight: 15 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  nomeFunc: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  horaBadge: { fontSize: 11, fontWeight: 'bold', color: '#64748b', backgroundColor: '#f1f5f9', padding: 4, borderRadius: 4 },
+  infoTarefa: { fontSize: 14, color: '#475569', marginTop: 2 },
+  dataText: { fontSize: 10, color: '#94a3b8', marginTop: 6 },
+  emptyContainer: { alignItems: 'center', marginTop: 50 },
+  empty: { color: '#94a3b8', fontStyle: 'italic' }
 });

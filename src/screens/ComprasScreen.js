@@ -1,79 +1,117 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function ComprasScreen() {
+export default function SolicitacaoCompra({ navigation }) {
   const { solicitacoesCompra, setSolicitacoesCompra, loggedUser } = useContext(AppContext);
+  
+  // Estados para os campos e para o controle de envio
   const [item, setItem] = useState('');
-  const [qtd, setQtd] = useState('');
-  const [obs, setObs] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [enviando, setEnviando] = useState(false);
 
-  const handleEnviar = () => {
-    if (!item || !qtd) {
-      Alert.alert("Aviso", "Por favor, preencha o item e a quantidade.");
+  const enviarSolicitacao = () => {
+    if (!item || !quantidade) {
+      Alert.alert("Erro", "Por favor, preencha o item e a quantidade.");
       return;
     }
 
-    const novaSolicitacao = {
-      id: Math.random().toString(),
-      item,
-      qtd,
-      obs,
-      autor: loggedUser?.nome || 'Operador',
-      data: new Date().toLocaleDateString('pt-BR'),
-      status: 'ABERTA'
-    };
+    // 1. Inicia sinalização visual de carregamento
+    setEnviando(true);
 
-    setSolicitacoesCompra([novaSolicitacao, ...solicitacoesCompra]);
-    
-    // Aviso visual solicitado
-    Alert.alert(
-      "Solicitação Enviada", 
-      "O gestor foi notificado sobre a necessidade de compra do item: " + item,
-      [{ text: "OK", onPress: () => { setItem(''); setQtd(''); setObs(''); } }]
-    );
+    // Simulando um pequeno delay de rede (mesmo que seja local) para o user ver que processou
+    setTimeout(() => {
+      const novaCompra = {
+        id: Math.random().toString(),
+        item: item,
+        quantidade: quantidade,
+        autor: loggedUser?.nome || 'Funcionário',
+        data: new Date().toLocaleDateString('pt-BR')
+      };
+
+      // 2. Salva no contexto
+      setSolicitacoesCompra([novaCompra, ...solicitacoesCompra]);
+
+      // 3. Limpa os campos IMEDIATAMENTE
+      setItem('');
+      setQuantidade('');
+      setEnviando(false);
+
+      // 4. Sinalização visual final (Feedback positivo)
+      Alert.alert(
+        "Sucesso!", 
+        "Sua solicitação foi enviada para o gestor.",
+        [{ text: "OK", onPress: () => navigation.goBack() }]
+      );
+    }, 800); 
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <HeaderApp title="Solicitar Compra" />
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.label}>O que precisa ser comprado?</Text>
-        <TextInput 
-          style={styles.input} 
-          value={item} 
-          onChangeText={setItem} 
+    <View style={styles.container}>
+      <HeaderApp title="Solicitar Compra" onBack={() => navigation.goBack()} />
+      
+      <View style={styles.form}>
+        <Text style={styles.label}>O que está faltando?</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: Luvas de proteção, Parafusos..."
+          value={item}
+          onChangeText={setItem}
+          editable={!enviando} // Trava o campo enquanto envia
         />
 
-        <Text style={styles.label}>Quantidade:</Text>
-        <TextInput 
-          style={styles.input} 
-          value={qtd} 
-          onChangeText={setQtd} 
+        <Text style={styles.label}>Quantidade / Observação</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 2 caixas ou 50 unidades"
+          value={quantidade}
+          onChangeText={setQuantidade}
+          editable={!enviando} // Trava o campo enquanto envia
         />
 
-        <Text style={styles.label}>Observação (Opcional):</Text>
-        <TextInput 
-          style={[styles.input, { height: 100 }]} 
-          multiline 
-          value={obs} 
-          onChangeText={setObs} 
-        />
-
-        <TouchableOpacity style={styles.btnEnviar} onPress={handleEnviar}>
-          <Text style={styles.btnText}>ENVIAR SOLICITAÇÃO</Text>
+        <TouchableOpacity 
+          style={[styles.btnEnviar, enviando && styles.btnDesabilitado]} 
+          onPress={enviarSolicitacao}
+          disabled={enviando} // Evita o clique duplo físico
+        >
+          {enviando ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="cart-outline" size={20} color="#fff" />
+              <Text style={styles.btnText}>ENVIAR SOLICITAÇÃO</Text>
+            </>
+          )}
         </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
-  container: { padding: 25 },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  form: { padding: 25 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#64748b', marginBottom: 8 },
-  input: { backgroundColor: '#fff', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 20, fontSize: 16 },
-  btnEnviar: { backgroundColor: '#2563eb', padding: 20, borderRadius: 15, alignItems: 'center', marginTop: 10 },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  input: { 
+    backgroundColor: '#fff', 
+    padding: 15, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: '#e2e8f0', 
+    marginBottom: 20,
+    fontSize: 16 
+  },
+  btnEnviar: { 
+    backgroundColor: '#2563eb', 
+    padding: 20, 
+    borderRadius: 15, 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 3
+  },
+  btnDesabilitado: { backgroundColor: '#94a3b8' },
+  btnText: { color: '#fff', fontWeight: 'bold', marginLeft: 10, fontSize: 16 }
 });
