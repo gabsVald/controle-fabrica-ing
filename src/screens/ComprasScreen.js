@@ -42,7 +42,6 @@ export default function ComprasScreen() {
         <Text style={styles.label}>O que precisa ser comprado?</Text>
         <TextInput 
           style={styles.input} 
-          placeholder="Ex: Eletrodo 6013, Disco de Corte..." 
           value={item} 
           onChangeText={setItem} 
         />
@@ -50,7 +49,6 @@ export default function ComprasScreen() {
         <Text style={styles.label}>Quantidade:</Text>
         <TextInput 
           style={styles.input} 
-          placeholder="Ex: 10 unidades, 2 caixas..." 
           value={qtd} 
           onChangeText={setQtd} 
         />
@@ -58,7 +56,6 @@ export default function ComprasScreen() {
         <Text style={styles.label}>Observação (Opcional):</Text>
         <TextInput 
           style={[styles.input, { height: 100 }]} 
-          placeholder="Descreva a urgência ou detalhes técnicos..." 
           multiline 
           value={obs} 
           onChangeText={setObs} 
