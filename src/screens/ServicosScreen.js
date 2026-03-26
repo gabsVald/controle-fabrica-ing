@@ -7,29 +7,36 @@ import HeaderApp from '../components/HeaderApp';
 export default function ServicosScreen({ navigation }) {
   const { 
     servicosIncompletos, setServicosIncompletos, 
-    loggedUser, 
-    setStatusPonto, setDadosAtividade, 
-    registrosPonto, setRegistrosPonto 
+    loggedUser, statusPonto, setStatusPonto, 
+    setDadosAtividade, setRegistrosPonto, registrosPonto 
   } = useContext(AppContext);
 
-  // RF19 / RF13 - Lógica para Retomar e já Iniciar o Ponto automaticamente
   const retomarServico = (item) => {
-    const agora = new Date();
-    const horaEntrada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    // 1. Bloqueio: Não deixa iniciar se já estiver trabalhando em algo
+    if (statusPonto === 'trabalhando') {
+      Alert.alert(
+        "Ação Bloqueada", 
+        "Você já tem uma atividade em andamento. Finalize-a antes de retomar outra."
+      );
+      return;
+    }
 
-    // 1. Configura a atividade atual para ativar o cronómetro na Home
+    const agora = new Date();
+    const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // 2. Configura os dados para o cronómetro da Home
     setDadosAtividade({
       inicio: agora.toISOString(),
-      setor: item.setor,
-      subsetor: item.subsetor
+      setor: item.setor || 'Geral',
+      subsetor: item.subsetor || 'N/A'
     });
 
-    // 2. Cria o registo de entrada no histórico (Item 5)
+    // 3. Registra a entrada no histórico
     const novoRegistro = {
       id: Math.random().toString(),
       nome: loggedUser?.nome || "Operador",
       data: agora.toLocaleDateString('pt-BR'),
-      horaEntrada: horaEntrada,
+      horaEntrada: horaFormatada,
       setor: item.setor,
       subsetor: item.subsetor,
       status: 'trabalhando'
@@ -38,12 +45,10 @@ export default function ServicosScreen({ navigation }) {
     setRegistrosPonto([novoRegistro, ...registrosPonto]);
     setStatusPonto('trabalhando');
 
-    // 3. Remove da lista de pendentes (ou marca como em andamento)
+    // 4. Remove da lista de pendentes
     setServicosIncompletos(servicosIncompletos.filter(s => s.id !== item.id));
 
-    Alert.alert("Sucesso", `Serviço retomado em ${item.subsetor}!`);
-    
-    // 4. Volta para a Home (Navegação baseada no Item 22)
+    // 5. NAVEGAÇÃO DIRETA: Te leva para a aba "Início"
     navigation.navigate('Início'); 
   };
 
@@ -59,10 +64,9 @@ export default function ServicosScreen({ navigation }) {
       <Text style={styles.desc}>{item.descricao}</Text>
       <Text style={styles.autor}>Relatado por: {item.criadoPor || 'N/A'}</Text>
       
-      {/* Botão Retomar: Configura o Ponto e Navega automaticamente (RNF20) */}
       <TouchableOpacity style={styles.btnRetomar} onPress={() => retomarServico(item)}>
         <Ionicons name="play-circle-outline" size={20} color="#fff" />
-        <Text style={styles.btnText}>Retomar serviço</Text>
+        <Text style={styles.btnText}>RETOMAR SERVIÇO</Text>
       </TouchableOpacity>
     </View>
   );
@@ -73,7 +77,7 @@ export default function ServicosScreen({ navigation }) {
       <View style={styles.container}>
         <FlatList
           data={servicosIncompletos}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 30 }}
           ListEmptyComponent={<Text style={styles.empty}>Nenhuma tarefa pendente no momento.</Text>}
@@ -100,6 +104,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     justifyContent: 'center' 
   },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14, marginLeft: 8 },
   empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' }
 });

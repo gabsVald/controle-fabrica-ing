@@ -1,57 +1,82 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { AppContext } from '../context/AppContext';
+import HeaderApp from '../components/HeaderApp';
 
 export default function ComprasScreen() {
+  const { solicitacoesCompra, setSolicitacoesCompra, loggedUser } = useContext(AppContext);
   const [item, setItem] = useState('');
   const [qtd, setQtd] = useState('');
-  const { solicitacoesCompra, setSolicitacoesCompra, loggedUser } = useContext(AppContext);
+  const [obs, setObs] = useState('');
 
-  const enviarSolicitacao = () => {
-    if (!item || !qtd) return Alert.alert("Erro", "Preencha o item e a quantidade.");
-    
-    const nova = {
+  const handleEnviar = () => {
+    if (!item || !qtd) {
+      Alert.alert("Aviso", "Por favor, preencha o item e a quantidade.");
+      return;
+    }
+
+    const novaSolicitacao = {
       id: Math.random().toString(),
       item,
       qtd,
-      autor: loggedUser.nome,
-      status: 'pendente',
-      data: new Date().toLocaleDateString('pt-BR')
+      obs,
+      autor: loggedUser?.nome || 'Operador',
+      data: new Date().toLocaleDateString('pt-BR'),
+      status: 'ABERTA'
     };
 
-    setSolicitacoesCompra([nova, ...solicitacoesCompra]);
-    setItem('');
-    setQtd('');
-    Alert.alert("Sucesso", "Solicitação enviada ao gestor!");
+    setSolicitacoesCompra([novaSolicitacao, ...solicitacoesCompra]);
+    
+    // Aviso visual solicitado
+    Alert.alert(
+      "Solicitação Enviada", 
+      "O gestor foi notificado sobre a necessidade de compra do item: " + item,
+      [{ text: "OK", onPress: () => { setItem(''); setQtd(''); setObs(''); } }]
+    );
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Solicitar Compra</Text>
-        <View style={styles.form}>
-          <Text style={styles.label}>O que está faltando?</Text>
-          <TextInput style={styles.input} placeholder="Ex: Parafuso M8, Broca 10mm..." value={item} onChangeText={setItem} />
-          
-          <Text style={styles.label}>Quantidade / Observação</Text>
-          <TextInput style={styles.input} placeholder="Ex: 2 caixas, Urgente..." value={qtd} onChangeText={setQtd} />
+      <HeaderApp title="Solicitar Compra" />
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.label}>O que precisa ser comprado?</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Ex: Eletrodo 6013, Disco de Corte..." 
+          value={item} 
+          onChangeText={setItem} 
+        />
 
-          <TouchableOpacity style={styles.btnEnviar} onPress={enviarSolicitacao}>
-            <Text style={styles.btnText}>Enviar para o Gestor</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        <Text style={styles.label}>Quantidade:</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Ex: 10 unidades, 2 caixas..." 
+          value={qtd} 
+          onChangeText={setQtd} 
+        />
+
+        <Text style={styles.label}>Observação (Opcional):</Text>
+        <TextInput 
+          style={[styles.input, { height: 100 }]} 
+          placeholder="Descreva a urgência ou detalhes técnicos..." 
+          multiline 
+          value={obs} 
+          onChangeText={setObs} 
+        />
+
+        <TouchableOpacity style={styles.btnEnviar} onPress={handleEnviar}>
+          <Text style={styles.btnText}>ENVIAR SOLICITAÇÃO</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f8fafc' },
-  container: { padding: 20 },
-  title: { fontSize: 24, fontWeight: '900', color: '#1e293b', marginBottom: 20 },
-  form: { backgroundColor: '#fff', padding: 25, borderRadius: 25, elevation: 4 },
+  container: { padding: 25 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#64748b', marginBottom: 8 },
-  input: { borderBottomWidth: 1, borderColor: '#e2e8f0', marginBottom: 25, fontSize: 16, padding: 5 },
-  btnEnviar: { backgroundColor: '#2563eb', padding: 20, borderRadius: 15, alignItems: 'center' },
+  input: { backgroundColor: '#fff', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 20, fontSize: 16 },
+  btnEnviar: { backgroundColor: '#2563eb', padding: 20, borderRadius: 15, alignItems: 'center', marginTop: 10 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

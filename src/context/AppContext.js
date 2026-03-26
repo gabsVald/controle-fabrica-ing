@@ -8,45 +8,55 @@ export const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [usersList, setUsersList] = useState(initialUsers);
   const [loggedUser, setLoggedUser] = useState(null);
-  const [setores] = useState(setoresDB || []);
+  const [setores] = useState(setoresDB || []); // Garante que nunca seja undefined
 
   const [registrosPonto, setRegistrosPonto] = useState([]);
-  const [servicosIncompletos, setServicosIncompletos] = useState([]); // Pendentes
+  const [servicosIncompletos, setServicosIncompletos] = useState([]);
   const [solicitacoesCompra, setSolicitacoesCompra] = useState([]);
-  const [chamados, setChamados] = useState([]);
 
   const [statusPonto, setStatusPonto] = useState('ausente'); 
   const [dadosAtividade, setDadosAtividade] = useState({ inicio: null, setor: '', subsetor: '' });
 
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
-        const [p, s, c, a, ch] = await Promise.all([
-          AsyncStorage.getItem('@ponto'), AsyncStorage.getItem('@servicos'),
-          AsyncStorage.getItem('@compras'), AsyncStorage.getItem('@atividade'),
-          AsyncStorage.getItem('@chamados')
+        const [p, s, c, a] = await Promise.all([
+          AsyncStorage.getItem('@ponto'),
+          AsyncStorage.getItem('@servicos'),
+          AsyncStorage.getItem('@compras'),
+          AsyncStorage.getItem('@atividade')
         ]);
-        if (p) setRegistrosPonto(JSON.parse(p));
-        if (s) setServicosIncompletos(JSON.parse(s));
-        if (c) setSolicitacoesCompra(JSON.parse(c));
-        if (ch) setChamados(JSON.parse(ch));
+        
+        // Adicionado fallback (|| []) para evitar nulos
+        if (p) setRegistrosPonto(JSON.parse(p) || []);
+        if (s) setServicosIncompletos(JSON.parse(s) || []);
+        if (c) setSolicitacoesCompra(JSON.parse(c) || []);
         if (a) {
           const act = JSON.parse(a);
-          setDadosAtividade(act);
-          setStatusPonto(act.inicio ? 'trabalhando' : 'ausente');
+          if (act) {
+            setDadosAtividade(act);
+            setStatusPonto(act.inicio ? 'trabalhando' : 'ausente');
+          }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { 
+        console.error("Erro ao carregar dados:", e); 
+      }
     };
-    loadData();
+    load();
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem('@ponto', JSON.stringify(registrosPonto));
-    AsyncStorage.setItem('@servicos', JSON.stringify(servicosIncompletos));
-    AsyncStorage.setItem('@compras', JSON.stringify(solicitacoesCompra));
-    AsyncStorage.setItem('@atividade', JSON.stringify(dadosAtividade));
-    AsyncStorage.setItem('@chamados', JSON.stringify(chamados));
-  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, dadosAtividade, chamados]);
+    // Salva apenas se os dados existirem
+    const saveData = async () => {
+      try {
+        await AsyncStorage.setItem('@ponto', JSON.stringify(registrosPonto));
+        await AsyncStorage.setItem('@servicos', JSON.stringify(servicosIncompletos));
+        await AsyncStorage.setItem('@compras', JSON.stringify(solicitacoesCompra));
+        await AsyncStorage.setItem('@atividade', JSON.stringify(dadosAtividade));
+      } catch (e) { console.error("Erro ao salvar:", e); }
+    };
+    saveData();
+  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, dadosAtividade]);
 
   return (
     <AppContext.Provider value={{
@@ -54,7 +64,6 @@ export const AppProvider = ({ children }) => {
       registrosPonto, setRegistrosPonto,
       servicosIncompletos, setServicosIncompletos,
       solicitacoesCompra, setSolicitacoesCompra,
-      chamados, setChamados,
       statusPonto, setStatusPonto, dadosAtividade, setDadosAtividade
     }}>
       {children}

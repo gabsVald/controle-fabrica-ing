@@ -8,49 +8,87 @@ export default function PontoEntradaScreen({ navigation }) {
   const [setorSel, setSetorSel] = useState(null);
   const [subSel, setSubSel] = useState(null);
 
-  const handleConfirmar = () => {
-    if (!setorSel || !subSel) return Alert.alert("Aviso", "Selecione o setor e a máquina.");
-    const agora = new Date();
-    
-    setDadosAtividade({ inicio: agora.toISOString(), setor: setorSel, subsetor: subSel });
-    setRegistrosPonto([{
-      id: Math.random().toString(),
-      nome: loggedUser.nome,
-      data: agora.toLocaleDateString('pt-BR'),
-      horaEntrada: agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
-      setor: setorSel, subsetor: subSel, status: 'trabalhando'
-    }, ...registrosPonto]);
+  // Segurança: Garante que setores seja sempre uma lista para o .map não quebrar
+  const listaSetores = setores || [];
 
+  const handleConfirmar = () => {
+    if (!setorSel || !subSel) {
+      Alert.alert("Atenção", "Selecione o setor e a máquina antes de confirmar.");
+      return;
+    }
+
+    const agora = new Date();
+    const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // Salva o estado da atividade atual
+    setDadosAtividade({
+      inicio: agora.toISOString(),
+      setor: setorSel,
+      subsetor: subSel
+    });
+
+    // Cria o registro histórico
+    const novo = {
+      id: Math.random().toString(),
+      nome: loggedUser?.nome || "Operador",
+      data: agora.toLocaleDateString('pt-BR'),
+      horaEntrada: horaFormatada,
+      setor: setorSel,
+      subsetor: subSel,
+      status: 'trabalhando'
+    };
+
+    setRegistrosPonto([novo, ...registrosPonto]);
     setStatusPonto('trabalhando');
+    
     navigation.navigate('MainFunc');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <HeaderApp onBack={() => navigation.goBack()} />
-      <ScrollView padding={20}>
+      <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Registrar Entrada</Text>
-        <Text style={styles.label}>Setor:</Text>
+        
+        <Text style={styles.label}>1. Selecione o Setor</Text>
         <View style={styles.grid}>
-          {setores.map(s => (
-            <TouchableOpacity key={s.id} style={[styles.chip, setorSel === s.nome && styles.active]} onPress={() => {setSetorSel(s.nome); setSubSel(null);}}>
-              <Text style={setorSel === s.nome && {color:'#fff'}}>{s.nome}</Text>
+          {listaSetores.map(s => (
+            <TouchableOpacity 
+              key={s.id} 
+              style={[styles.chip, setorSel === s.nome && styles.chipActive]} 
+              onPress={() => { 
+                setSetorSel(s.nome); 
+                setSubSel(null); // Reseta a máquina ao trocar de setor
+              }}
+            >
+              <Text style={[styles.chipText, setorSel === s.nome && styles.textWhite]}>{s.nome}</Text>
             </TouchableOpacity>
           ))}
         </View>
+
         {setorSel && (
           <>
-            <Text style={styles.label}>Subsetor:</Text>
+            <Text style={styles.label}>2. Selecione a Máquina</Text>
             <View style={styles.grid}>
-              {setores.find(s => s.nome === setorSel).subsetores.map(sub => (
-                <TouchableOpacity key={sub} style={[styles.chip, subSel === sub && styles.activeBlue]} onPress={() => setSubSel(sub)}>
-                  <Text style={subSel === sub && {color:'#fff'}}>{sub}</Text>
+              {/* O segredo aqui: o find procura o objeto e o map percorre os subsetores com segurança */}
+              {(listaSetores.find(s => s.nome === setorSel)?.subsetores || []).map(sub => (
+                <TouchableOpacity 
+                  key={sub.id} 
+                  style={[styles.chip, subSel === sub.nome && styles.chipActiveBlue]} 
+                  onPress={() => setSubSel(sub.nome)}
+                >
+                  <Text style={[styles.chipText, subSel === sub.nome && styles.textWhite]}>{sub.nome}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </>
         )}
-        <TouchableOpacity style={[styles.btn, (!setorSel || !subSel) ? styles.disabled : styles.enabled]} onPress={handleConfirmar}>
+
+        <TouchableOpacity 
+          style={[styles.btnFinal, (!setorSel || !subSel) ? styles.btnDisabled : styles.btnEnabled]} 
+          onPress={handleConfirmar}
+          disabled={!setorSel || !subSel} // Impede o clique se não estiver selecionado
+        >
           <Text style={styles.btnText}>CONFIRMAR ENTRADA</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -59,15 +97,18 @@ export default function PontoEntradaScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  label: { fontWeight: 'bold', marginVertical: 10 },
+  safeArea: { flex: 1, backgroundColor: '#f2f2f2' },
+  container: { padding: 20 },
+  title: { fontSize: 26, fontWeight: '900', marginBottom: 20, textAlign: 'center' },
+  label: { fontWeight: 'bold', marginTop: 15, marginBottom: 10, color: '#4b5563' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   chip: { padding: 12, backgroundColor: '#fff', borderRadius: 10, marginRight: 10, marginBottom: 10, borderWidth: 1, borderColor: '#ddd' },
-  active: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
-  activeBlue: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  btn: { padding: 20, borderRadius: 15, alignItems: 'center', marginTop: 20 },
-  enabled: { backgroundColor: '#16a34a' },
-  disabled: { backgroundColor: '#cbd5e1' },
-  btnText: { color: '#fff', fontWeight: 'bold' }
+  chipActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
+  chipActiveBlue: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  chipText: { fontWeight: 'bold' },
+  textWhite: { color: '#fff' },
+  btnFinal: { padding: 20, borderRadius: 15, alignItems: 'center', marginTop: 30 },
+  btnEnabled: { backgroundColor: '#16a34a' },
+  btnDisabled: { backgroundColor: '#9ca3af' },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 }
 });
