@@ -1,5 +1,5 @@
 import React, { useContext, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,35 +18,46 @@ export default function RelatorioPontoScreen() {
     });
   }, [busca, filtroStatus, registrosPonto]);
 
-  // Função para limpar TODOS os registros
+  // Função para limpar TODOS os registros com suporte Web e Mobile
   const limparTodos = () => {
-    Alert.alert(
-      "Atenção", 
-      "Tem certeza que deseja apagar TODO o histórico de atividades?", 
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Sim, apagar", style: "destructive", onPress: () => setRegistrosPonto([]) }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirma = window.confirm("Tem certeza que deseja apagar TODO o histórico de atividades?");
+      if (confirma) setRegistrosPonto([]);
+    } else {
+      Alert.alert(
+        "Atenção", 
+        "Tem certeza que deseja apagar TODO o histórico de atividades?", 
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Sim, apagar", style: "destructive", onPress: () => setRegistrosPonto([]) }
+        ]
+      );
+    }
   };
 
-  // Função para excluir um ÚNICO registro
+  // Função para excluir um ÚNICO registro com suporte Web e Mobile
   const removerRegistro = (id) => {
-    Alert.alert(
-      "Remover Registro", 
-      "Deseja apagar este registro do histórico?", 
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Apagar", 
-          style: "destructive", 
-          onPress: () => {
-            const novaLista = registrosPonto.filter(r => r.id !== id);
-            setRegistrosPonto(novaLista);
+    if (Platform.OS === 'web') {
+      const confirma = window.confirm("Deseja apagar este registro do histórico?");
+      if (confirma) {
+        setRegistrosPonto(registrosPonto.filter(r => r.id !== id));
+      }
+    } else {
+      Alert.alert(
+        "Remover Registro", 
+        "Deseja apagar este registro do histórico?", 
+        [
+          { text: "Cancelar", style: "cancel" },
+          { 
+            text: "Apagar", 
+            style: "destructive", 
+            onPress: () => {
+              setRegistrosPonto(registrosPonto.filter(r => r.id !== id));
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -74,7 +85,7 @@ export default function RelatorioPontoScreen() {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
-      <HeaderApp title="Relatórios" onBack={() => setLoggedUser(null)} />
+      <HeaderApp title="Relatórios" />
       
       <View style={{ padding: 15 }}>
         <View style={[styles.searchBar, isDarkMode && styles.searchBarDark]}>
