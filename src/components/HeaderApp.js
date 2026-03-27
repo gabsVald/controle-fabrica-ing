@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
@@ -9,17 +9,25 @@ export default function HeaderApp({ onBack, title, hideLogout }) {
   const navigation = useNavigation();
 
   const fazerLogout = () => {
-    Alert.alert("Sair", "Deseja sair da sua conta?", [
-      { text: "Cancelar", style: "cancel" },
-      { 
-        text: "Sair", 
-        style: "destructive", 
-        onPress: () => {
-          setLoggedUser(null);
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        }
+    if (Platform.OS === 'web') {
+      const confirma = window.confirm("Deseja sair da sua conta?");
+      if (confirma) {
+        setLoggedUser(null);
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
       }
-    ]);
+    } else {
+      Alert.alert("Sair", "Deseja sair da sua conta?", [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Sair", 
+          style: "destructive", 
+          onPress: () => {
+            setLoggedUser(null);
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          }
+        }
+      ]);
+    }
   };
 
   return (
@@ -66,7 +74,6 @@ const styles = StyleSheet.create({
   headerLight: { backgroundColor: '#fff', borderBottomColor: '#e2e8f0' },
   headerDark: { backgroundColor: '#121212', borderBottomColor: '#333' },
   
-  // As caixas laterais com largura fixa mantêm o título perfeitamente centralizado
   sideBox: { width: 70, alignItems: 'flex-start' },
   rightBox: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   

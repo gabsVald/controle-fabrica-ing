@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, Platform } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -28,23 +28,31 @@ export default function HomeFuncionario({ navigation }) {
   }, [statusPonto, dadosAtividade]);
 
   const fazerLogout = () => {
-    Alert.alert("Sair", "Deseja sair da sua conta?", [
-      { text: "Cancelar", style: "cancel" },
-      { 
-        text: "Sair", 
-        style: "destructive", 
-        onPress: () => {
-          setLoggedUser(null);
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        }
+    if (Platform.OS === 'web') {
+      const confirma = window.confirm("Deseja sair da sua conta?");
+      if (confirma) {
+        setLoggedUser(null);
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
       }
-    ]);
+    } else {
+      Alert.alert("Sair", "Deseja sair da sua conta?", [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Sair", 
+          style: "destructive", 
+          onPress: () => {
+            setLoggedUser(null);
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          }
+        }
+      ]);
+    }
   };
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
       
-      {/* CONTROLES FLUTUANTES (Não quebram o layout) */}
+      {/* CONTROLES FLUTUANTES */}
       <View style={styles.floatingControls}>
         <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.floatBtn}>
           <Ionicons name={isDarkMode ? "sunny" : "moon"} size={26} color={isDarkMode ? "#fbbf24" : "#1e293b"} />
@@ -83,7 +91,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc', padding: 25 },
   bgDark: { backgroundColor: '#121212' },
   
-  // POSICIONAMENTO ABSOLUTO: Fica sobreposto sem empurrar a tela
   floatingControls: { position: 'absolute', top: 30, right: 25, flexDirection: 'row', zIndex: 10 },
   floatBtn: { marginLeft: 15 },
 
