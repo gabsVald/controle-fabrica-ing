@@ -5,7 +5,7 @@ import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 
 export default function PontoSaidaScreen({ navigation }) {
-  const { loggedUser, dadosAtividade, setRegistrosPonto, registrosPonto, setStatusPonto, setDadosAtividade, setServicosIncompletos, servicosIncompletos } = useContext(AppContext);
+  const { loggedUser, dadosAtividade, setRegistrosPonto, registrosPonto, setStatusPonto, setDadosAtividade, setServicosIncompletos, servicosIncompletos, isDarkMode } = useContext(AppContext);
   const [passo, setPasso] = useState(1);
   const [detalhes, setDetalhes] = useState({ descricao: '', prioridade: 'Média', foto: null });
 
@@ -18,9 +18,8 @@ export default function PontoSaidaScreen({ navigation }) {
     const agora = new Date();
     const horaSaida = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-    // Segurança: Atualiza apenas o registro que está ATIVO (trabalhando) deste usuário específico
-    setRegistrosPonto(registrosPonto.map(r => 
-      (r.status === 'trabalhando' && r.nome === loggedUser.nome) ? 
+    setRegistrosPonto(registrosPonto.map(r =>
+      (r.status === 'trabalhando' && r.nome === loggedUser.nome) ?
       {...r, saida: horaSaida, status: tipo === 'completo' ? 'Completo' : 'Incompleto'} : r
     ));
 
@@ -36,20 +35,30 @@ export default function PontoSaidaScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={{flex:1, backgroundColor:'#f8fafc'}}>
-      <HeaderApp onBack={() => navigation.goBack()} />
+    <SafeAreaView style={[styles.safeArea, isDarkMode && styles.bgDark]}>
+      <HeaderApp onBack={() => navigation.goBack()} title="Saída" />
       <ScrollView contentContainerStyle={{padding: 20}}>
         {passo === 1 ? (
           <View>
-            <Text style={styles.title}>Finalizar Atividade</Text>
-            <TouchableOpacity style={styles.btnGreen} onPress={() => finalizar('completo')}><Text style={styles.btnText}>SERVIÇO COMPLETO</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.btnOrange} onPress={() => setPasso(2)}><Text style={styles.btnText}>SERVIÇO INCOMPLETO</Text></TouchableOpacity>
+            <Text style={[styles.title, isDarkMode && styles.textWhite]}>Finalizar Atividade</Text>
+            <TouchableOpacity style={styles.btnGreen} onPress={() => finalizar('completo')}>
+              <Text style={styles.btnText}>SERVIÇO COMPLETO</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnOrange} onPress={() => setPasso(2)}>
+              <Text style={styles.btnText}>SERVIÇO INCOMPLETO</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View>
-            <Text style={styles.title}>Relatar Problema</Text>
-            <TextInput style={styles.input} placeholder="Descrição..." value={detalhes.descricao} onChangeText={t => setDetalhes({...detalhes, descricao: t})} />
-            <Text style={styles.label}>Prioridade:</Text>
+            <Text style={[styles.title, isDarkMode && styles.textWhite]}>Relatar Problema</Text>
+            <TextInput 
+              style={[styles.input, isDarkMode && styles.inputDark]} 
+              placeholder="Descrição..." 
+              placeholderTextColor="#94a3b8"
+              value={detalhes.descricao} 
+              onChangeText={t => setDetalhes({...detalhes, descricao: t})} 
+            />
+            <Text style={[styles.label, isDarkMode && styles.textWhite]}>Prioridade:</Text>
             <View style={{flexDirection:'row', marginBottom: 20}}>
               {['Alta', 'Média', 'Baixa'].map(p => (
                 <TouchableOpacity key={p} style={[styles.chip, detalhes.prioridade === p && styles.active]} onPress={() => setDetalhes({...detalhes, prioridade: p})}>
@@ -57,8 +66,14 @@ export default function PontoSaidaScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity style={styles.btnBlue} onPress={tirarFoto}><Text style={styles.btnText}>{detalhes.foto ? '✅ Foto OK' : '📸 Tirar Foto'}</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.btnRed} onPress={() => finalizar('incompleto')}><Text style={styles.btnText}>ENVIAR E FINALIZAR</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.btnBlue} onPress={tirarFoto}>
+              <Text style={styles.btnText}>{detalhes.foto ? '✅ Foto OK' : '📸 Tirar Foto'}</Text>
+            </TouchableOpacity>
+            
+            {/* BOTÃO VERMELHO COMO SOLICITADO */}
+            <TouchableOpacity style={styles.btnRed} onPress={() => finalizar('incompleto')}>
+              <Text style={styles.btnText}>ENVIAR E FINALIZAR</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -67,6 +82,8 @@ export default function PontoSaidaScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#f8fafc' },
+  bgDark: { backgroundColor: '#121212' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 30, textAlign: 'center' },
   btnGreen: { backgroundColor: '#16a34a', padding: 25, borderRadius: 15, marginBottom: 20, alignItems: 'center' },
   btnOrange: { backgroundColor: '#ea580c', padding: 25, borderRadius: 15, alignItems: 'center' },
@@ -74,7 +91,9 @@ const styles = StyleSheet.create({
   btnBlue: { backgroundColor: '#3b82f6', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 15 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
   input: { backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },
+  inputDark: { backgroundColor: '#1e1e1e', borderColor: '#333', color: '#fff' },
   label: { fontWeight: 'bold', marginBottom: 10 },
   chip: { padding: 10, backgroundColor: '#eee', borderRadius: 8, marginRight: 10 },
-  active: { backgroundColor: '#2563eb' }
+  active: { backgroundColor: '#2563eb' },
+  textWhite: { color: '#fff' }
 });

@@ -4,37 +4,33 @@ import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 
 export default function PontoEntradaScreen({ navigation }) {
-  // ADICIONADO: isDarkMode
   const { setores, setRegistrosPonto, registrosPonto, setStatusPonto, setDadosAtividade, loggedUser, isDarkMode } = useContext(AppContext);
-  const [setorSel, setSetorSel] = useState(null);
-  const [subSel, setSubSel] = useState(null);
+  
+  // Estado para controlar qual setor foi clicado
+  const [setorObjeto, setSetorObjeto] = useState(null);
 
-  const listaSetores = setores || [];
-
-  const handleConfirmar = () => {
-    if (!setorSel || !subSel) {
-      Alert.alert("Atenção", "Selecione o setor e a máquina antes de confirmar.");
-      return;
-    }
-
+  const handleConfirmar = (subNome) => {
     const agora = new Date();
     const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-    setDadosAtividade({ inicio: agora.toISOString(), setor: setorSel, subsetor: subSel });
+    setDadosAtividade({ 
+      inicio: agora.toISOString(), 
+      setor: setorObjeto.nome, 
+      subsetor: subNome 
+    });
 
     const novo = {
       id: Math.random().toString(),
       nome: loggedUser?.nome || "Operador",
       data: agora.toLocaleDateString('pt-BR'),
       horaEntrada: horaFormatada,
-      setor: setorSel,
-      subsetor: subSel,
+      setor: setorObjeto.nome,
+      subsetor: subNome,
       status: 'trabalhando'
     };
 
     setRegistrosPonto([novo, ...registrosPonto]);
     setStatusPonto('trabalhando');
-    
     navigation.navigate('MainFunc');
   };
 
@@ -42,47 +38,44 @@ export default function PontoEntradaScreen({ navigation }) {
     <SafeAreaView style={[styles.safeArea, isDarkMode && styles.bgDark]}>
       <HeaderApp onBack={() => navigation.goBack()} title="Entrada" />
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={[styles.title, isDarkMode && styles.textWhite]}>Registrar Entrada</Text>
-        
-        {/* TEXTO CENTRALIZADO */}
-        <Text style={[styles.label, isDarkMode && styles.textGray]}>1. Selecione o Setor</Text>
-        <View style={styles.grid}>
-          {listaSetores.map(s => (
-            <TouchableOpacity 
-              key={s.id} 
-              style={[styles.chip, isDarkMode && styles.chipDark, setorSel === s.nome && styles.chipActive]} 
-              onPress={() => { setSetorSel(s.nome); setSubSel(null); }}
-            >
-              <Text style={[styles.chipText, isDarkMode && styles.textWhite, setorSel === s.nome && styles.textWhite]}>{s.nome}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={[styles.title, isDarkMode && styles.textWhite]}>
+          {!setorObjeto ? "Selecionar Setor" : setorObjeto.nome}
+        </Text>
 
-        {setorSel && (
-          <>
-            {/* TEXTO CENTRALIZADO */}
-            <Text style={[styles.label, isDarkMode && styles.textGray, {marginTop: 25}]}>2. Selecione a Máquina</Text>
-            <View style={styles.grid}>
-              {(listaSetores.find(s => s.nome === setorSel)?.subsetores || []).map(sub => (
-                <TouchableOpacity 
-                  key={sub.id} 
-                  style={[styles.chip, isDarkMode && styles.chipDark, subSel === sub.nome && styles.chipActiveBlue]} 
-                  onPress={() => setSubSel(sub.nome)}
+        <View style={styles.grid}>
+          {!setorObjeto ? (
+            // PASSO 1: MOSTRAR SETORES
+            setores.map(s => (
+              <TouchableOpacity
+                key={s.id}
+                style={[styles.card, isDarkMode && styles.cardDark]}
+                onPress={() => setSetorObjeto(s)}
+              >
+                <Text style={[styles.cardText, isDarkMode && styles.textWhite]}>{s.nome}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            // PASSO 2: MOSTRAR SUBSETORES DO SETOR ESCOLHIDO
+            <>
+              {setorObjeto.subsetores.map((sub, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.card, styles.cardSub]}
+                  onPress={() => handleConfirmar(sub)}
                 >
-                  <Text style={[styles.chipText, isDarkMode && styles.textWhite, subSel === sub.nome && styles.textWhite]}>{sub.nome}</Text>
+                  <Text style={styles.textWhite}>{sub}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
-          </>
-        )}
-
-        <TouchableOpacity 
-          style={[styles.btnFinal, (!setorSel || !subSel) ? styles.btnDisabled : styles.btnEnabled]} 
-          onPress={handleConfirmar}
-          disabled={!setorSel || !subSel}
-        >
-          <Text style={styles.btnText}>CONFIRMAR ENTRADA</Text>
-        </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.btnVoltar} 
+                onPress={() => setSetorObjeto(null)}
+              >
+                <Text style={styles.textVoltar}>← Voltar para Setores</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -90,27 +83,28 @@ export default function PontoEntradaScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f8fafc' },
-  bgDark: { backgroundColor: '#121212' }, // PRETO REAL PARA MODO ESCURO
-  
+  bgDark: { backgroundColor: '#121212' },
   container: { padding: 20 },
-  title: { fontSize: 26, fontWeight: '900', marginBottom: 20, textAlign: 'center', color: '#1e293b' },
-  
-  // LABEL CENTRALIZADA
-  label: { fontWeight: 'bold', marginTop: 15, marginBottom: 15, color: '#4b5563', textAlign: 'center', fontSize: 16 },
-  
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }, // Centraliza os botões de setor também
-  
-  chip: { padding: 12, backgroundColor: '#fff', borderRadius: 10, margin: 5, borderWidth: 1, borderColor: '#ddd' },
-  chipDark: { backgroundColor: '#1e1e1e', borderColor: '#333' }, // Cinza escuro
-  chipActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
-  chipActiveBlue: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { fontWeight: 'bold', color: '#1e293b' },
-  
-  btnFinal: { padding: 20, borderRadius: 15, alignItems: 'center', marginTop: 40 },
-  btnEnabled: { backgroundColor: '#16a34a' },
-  btnDisabled: { backgroundColor: '#9ca3af' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-  
-  textWhite: { color: '#ffffff' },
-  textGray: { color: '#a1a1aa' }
+  title: { fontSize: 24, fontWeight: '900', marginBottom: 20, textAlign: 'center', color: '#1e293b' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  card: { 
+    width: '48%', 
+    height: 100, 
+    backgroundColor: '#fff', 
+    borderRadius: 15, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4
+  },
+  cardDark: { backgroundColor: '#1e1e1e' },
+  cardSub: { backgroundColor: '#2563eb' },
+  cardText: { fontWeight: 'bold', color: '#1e293b', textAlign: 'center' },
+  textWhite: { color: '#ffffff', fontWeight: 'bold', textAlign: 'center' },
+  btnVoltar: { width: '100%', alignItems: 'center', padding: 20 },
+  textVoltar: { color: '#64748b', fontWeight: 'bold' }
 });

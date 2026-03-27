@@ -9,14 +9,19 @@ export default function RelatorioPontoScreen() {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
 
-  const dadosFiltrados = useMemo(() => {
-    return registrosPonto.filter(item => {
-      const matchesBusca = item.nome.toLowerCase().includes(busca.toLowerCase()) || 
-                           item.setor.toLowerCase().includes(busca.toLowerCase());
-      const matchesStatus = filtroStatus === 'todos' || item.status.toLowerCase() === filtroStatus.toLowerCase();
-      return matchesBusca && matchesStatus;
-    });
-  }, [busca, filtroStatus, registrosPonto]);
+  // Apenas a mudança na função de filtro (dentro do useMemo)
+const dadosFiltrados = useMemo(() => {
+  return registrosPonto.filter(item => {
+    const termo = busca.toLowerCase();
+    const matchesBusca = 
+      (item.nome || "").toLowerCase().includes(termo) ||
+      (item.setor || "").toLowerCase().includes(termo) ||
+      (item.subsetor || "").toLowerCase().includes(termo); // Adicionado Subsetor na busca
+
+    const matchesStatus = filtroStatus === 'todos' || (item.status || "").toLowerCase() === filtroStatus.toLowerCase();
+    return matchesBusca && matchesStatus;
+  });
+}, [busca, filtroStatus, registrosPonto]);
 
   // Função para limpar TODOS os registros com suporte Web e Mobile
   const limparTodos = () => {
