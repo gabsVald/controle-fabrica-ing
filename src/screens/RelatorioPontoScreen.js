@@ -85,7 +85,7 @@ export default function RelatorioPontoScreen() {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
-      <HeaderApp title="Relatórios" />
+      <HeaderApp title="Relatórios" onBack={() => setLoggedUser(null)} />
       
       <View style={{ padding: 15 }}>
         <View style={[styles.searchBar, isDarkMode && styles.searchBarDark]}>
