@@ -14,7 +14,7 @@ export const AppProvider = ({ children }) => {
   const [registrosPonto, setRegistrosPonto] = useState([]);
   const [servicosIncompletos, setServicosIncompletos] = useState([]);
   const [solicitacoesCompra, setSolicitacoesCompra] = useState([]);
-  const [chamados, setChamados] = useState([]); // NOVO ESTADO
+  const [chamados, setChamados] = useState([]); 
 
   const [statusPonto, setStatusPonto] = useState('ausente'); 
   const [dadosAtividade, setDadosAtividade] = useState({ inicio: null, setor: '', subsetor: '' });
@@ -22,13 +22,15 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [p, s, c, a, ch, theme] = await Promise.all([
+        // Adicionámos o '@users' à lista de ficheiros a carregar
+        const [p, s, c, a, ch, theme, u] = await Promise.all([
           AsyncStorage.getItem('@ponto'),
           AsyncStorage.getItem('@servicos'),
           AsyncStorage.getItem('@compras'),
           AsyncStorage.getItem('@atividade'),
           AsyncStorage.getItem('@chamados'),
-          AsyncStorage.getItem('@theme')
+          AsyncStorage.getItem('@theme'),
+          AsyncStorage.getItem('@users') 
         ]);
         
         if (p) setRegistrosPonto(JSON.parse(p) || []);
@@ -36,6 +38,15 @@ export const AppProvider = ({ children }) => {
         if (c) setSolicitacoesCompra(JSON.parse(c) || []);
         if (ch) setChamados(JSON.parse(ch) || []);
         if (theme) setIsDarkMode(JSON.parse(theme));
+        
+        // Se encontrar utilizadores guardados, carrega-os para a lista
+        if (u) {
+          const parsedUsers = JSON.parse(u);
+          if (parsedUsers && parsedUsers.length > 0) {
+            setUsersList(parsedUsers);
+          }
+        }
+
         if (a) {
           const act = JSON.parse(a);
           if (act) {
@@ -59,15 +70,19 @@ export const AppProvider = ({ children }) => {
         await AsyncStorage.setItem('@chamados', JSON.stringify(chamados));
         await AsyncStorage.setItem('@atividade', JSON.stringify(dadosAtividade));
         await AsyncStorage.setItem('@theme', JSON.stringify(isDarkMode));
+        // Guarda a lista de utilizadores sempre que alguém criar uma conta nova
+        await AsyncStorage.setItem('@users', JSON.stringify(usersList)); 
       } catch (e) { console.error("Erro ao salvar:", e); }
     };
     saveData();
-  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, dadosAtividade, isDarkMode]);
+  // Adicionámos usersList aqui para que o sistema saiba que deve guardar ao haver alterações nela
+  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, dadosAtividade, isDarkMode, usersList]);
 
   return (
     <AppContext.Provider value={{
       isDarkMode, setIsDarkMode,
-      usersList, loggedUser, setLoggedUser, setores,
+      usersList, setUsersList,
+      loggedUser, setLoggedUser, setores,
       registrosPonto, setRegistrosPonto,
       servicosIncompletos, setServicosIncompletos,
       solicitacoesCompra, setSolicitacoesCompra,

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, Platform } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 
@@ -10,10 +10,17 @@ export default function CadastroScreen({ navigation }) {
   const { usersList, setUsersList } = useContext(AppContext);
 
   const handleCadastro = () => {
+    // 1. Validação de campos vazios
     if (!nome || !email || !senha) {
-      return Alert.alert("Erro", "Preencha todos os campos.");
+      if (Platform.OS === 'web') {
+        window.alert("Erro: Preencha todos os campos.");
+      } else {
+        Alert.alert("Erro", "Preencha todos os campos.");
+      }
+      return;
     }
 
+    // 2. Criação do usuário
     const novoUsuario = {
       id: Math.random().toString(),
       nome,
@@ -23,16 +30,23 @@ export default function CadastroScreen({ navigation }) {
     };
 
     setUsersList([...usersList, novoUsuario]);
-    Alert.alert("Sucesso", "Conta criada com sucesso!");
-    navigation.navigate('Login');
+    
+    // 3. Alerta de Sucesso e Navegação
+    if (Platform.OS === 'web') {
+      window.alert("Conta criada com sucesso!");
+      navigation.navigate('Login');
+    } else {
+      Alert.alert("Sucesso", "Conta criada com sucesso!", [
+        { text: "OK", onPress: () => navigation.navigate('Login') }
+      ]);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <HeaderApp onBack={() => navigation.goBack()} title="Criar Conta" />
+      <HeaderApp onBack={() => navigation.goBack()} title="Criar Conta" hideLogout={true} />
       <View style={styles.content}>
-        <TextInput style={styles.input} placeholder="Nome Completo" value={nome} onChangeText={setNome} />
-        <TextInput style={styles.input} placeholder="Usuário/Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
+        <TextInput style={styles.input} placeholder="Usuário" value={email} onChangeText={setEmail} autoCapitalize="none" />
         <TextInput style={styles.input} placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
         
         <TouchableOpacity style={styles.btn} onPress={handleCadastro}>
