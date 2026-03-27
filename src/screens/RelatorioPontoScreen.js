@@ -1,11 +1,11 @@
 import React, { useContext, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RelatorioPontoScreen() {
-  const { registrosPonto, isDarkMode, setLoggedUser } = useContext(AppContext);
+  const { registrosPonto, setRegistrosPonto, isDarkMode, setLoggedUser } = useContext(AppContext);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
 
@@ -18,6 +18,37 @@ export default function RelatorioPontoScreen() {
     });
   }, [busca, filtroStatus, registrosPonto]);
 
+  // Função para limpar TODOS os registros
+  const limparTodos = () => {
+    Alert.alert(
+      "Atenção", 
+      "Tem certeza que deseja apagar TODO o histórico de atividades?", 
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Sim, apagar", style: "destructive", onPress: () => setRegistrosPonto([]) }
+      ]
+    );
+  };
+
+  // Função para excluir um ÚNICO registro
+  const removerRegistro = (id) => {
+    Alert.alert(
+      "Remover Registro", 
+      "Deseja apagar este registro do histórico?", 
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Apagar", 
+          style: "destructive", 
+          onPress: () => {
+            const novaLista = registrosPonto.filter(r => r.id !== id);
+            setRegistrosPonto(novaLista);
+          }
+        }
+      ]
+    );
+  };
+
   const renderItem = ({ item }) => (
     <View style={[styles.card, isDarkMode ? styles.cardDark : styles.cardLight]}>
       <View style={styles.row}>
@@ -29,7 +60,15 @@ export default function RelatorioPontoScreen() {
         <Text style={[styles.time, isDarkMode && styles.textDark]}>Entrada: {item.horaEntrada}</Text>
         <Text style={[styles.time, isDarkMode && styles.textDark]}>Saída: {item.saida || '--:--'}</Text>
       </View>
-      <Text style={styles.date}>{item.data}</Text>
+      
+      <View style={styles.cardFooter}>
+        <Text style={styles.date}>{item.data}</Text>
+        
+        {/* BOTÃO LIXEIRA INDIVIDUAL */}
+        <TouchableOpacity style={styles.btnTrashIndividual} onPress={() => removerRegistro(item.id)}>
+          <Ionicons name="trash-outline" size={18} color="#ef4444" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -49,16 +88,23 @@ export default function RelatorioPontoScreen() {
           />
         </View>
 
-        <View style={styles.filterRow}>
-          {['Todos', 'Trabalhando', 'Completo', 'Incompleto'].map(status => (
-            <TouchableOpacity 
-              key={status}
-              style={[styles.filterBtn, filtroStatus === status.toLowerCase() && styles.filterBtnActive]} 
-              onPress={() => setFiltroStatus(status.toLowerCase())}
-            >
-              <Text style={[styles.filterText, filtroStatus === status.toLowerCase() && styles.filterTextActive]}>{status}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.filterContainer}>
+          <View style={styles.filterRow}>
+            {['Todos', 'Trabalhando', 'Completo', 'Incompleto'].map(status => (
+              <TouchableOpacity 
+                key={status}
+                style={[styles.filterBtn, filtroStatus === status.toLowerCase() && styles.filterBtnActive]} 
+                onPress={() => setFiltroStatus(status.toLowerCase())}
+              >
+                <Text style={[styles.filterText, filtroStatus === status.toLowerCase() && styles.filterTextActive]}>{status}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* BOTÃO LIMPAR TUDO */}
+          <TouchableOpacity style={styles.btnTrashAll} onPress={limparTodos}>
+            <Ionicons name="trash" size={20} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -75,25 +121,34 @@ export default function RelatorioPontoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  bgDark: { backgroundColor: '#1e293b' },
+  bgDark: { backgroundColor: '#121212' },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 15, borderRadius: 12, height: 50, marginBottom: 15 },
-  searchBarDark: { backgroundColor: '#334155' },
+  searchBarDark: { backgroundColor: '#1e1e1e', borderWidth: 1, borderColor: '#333' },
   input: { flex: 1, marginLeft: 10, fontSize: 15 },
-  filterRow: { flexDirection: 'row', marginBottom: 10, flexWrap: 'wrap' },
-  filterBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8, marginBottom: 8, backgroundColor: '#e2e8f0' },
+  
+  filterContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', flex: 1 },
+  filterBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, marginRight: 6, marginBottom: 8, backgroundColor: '#e2e8f0' },
   filterBtnActive: { backgroundColor: '#2563eb' },
-  filterText: { fontSize: 12, fontWeight: 'bold', color: '#64748b' },
+  filterText: { fontSize: 11, fontWeight: 'bold', color: '#64748b' },
   filterTextActive: { color: '#fff' },
+  
+  btnTrashAll: { backgroundColor: '#ef4444', padding: 8, borderRadius: 8, marginLeft: 10, marginBottom: 8 },
+  
   card: { padding: 20, borderRadius: 15, marginBottom: 12, elevation: 2 },
   cardLight: { backgroundColor: '#fff' },
-  cardDark: { backgroundColor: '#0f172a' },
+  cardDark: { backgroundColor: '#1e1e1e' },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   userName: { fontWeight: 'bold', fontSize: 16, color: '#1e293b' },
   statusBadge: { fontSize: 10, color: '#2563eb', fontWeight: 'bold', textTransform: 'uppercase' },
   info: { color: '#64748b', fontSize: 13, marginBottom: 10 },
   time: { fontSize: 12, fontWeight: '600' },
-  date: { fontSize: 11, color: '#94a3b8', marginTop: 10, textAlign: 'right' },
+  
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 10 },
+  date: { fontSize: 11, color: '#94a3b8' },
+  btnTrashIndividual: { padding: 5, backgroundColor: '#fee2e2', borderRadius: 8 },
+  
   textDark: { color: '#f8fafc' },
-  textGray: { color: '#cbd5e1' },
+  textGray: { color: '#a1a1aa' },
   empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' }
 });
