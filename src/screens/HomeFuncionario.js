@@ -1,10 +1,10 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { AppContext } from '../context/AppContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeFuncionario({ navigation }) {
-  // ADICIONADO: isDarkMode importado do Contexto
-  const { loggedUser, statusPonto, dadosAtividade, isDarkMode } = useContext(AppContext);
+  const { loggedUser, setLoggedUser, statusPonto, dadosAtividade, isDarkMode, setIsDarkMode } = useContext(AppContext);
   const [timer, setTimer] = useState('00:00:00');
 
   useEffect(() => {
@@ -27,9 +27,33 @@ export default function HomeFuncionario({ navigation }) {
     return () => clearInterval(interval);
   }, [statusPonto, dadosAtividade]);
 
+  const fazerLogout = () => {
+    Alert.alert("Sair", "Deseja sair da sua conta?", [
+      { text: "Cancelar", style: "cancel" },
+      { 
+        text: "Sair", 
+        style: "destructive", 
+        onPress: () => {
+          setLoggedUser(null);
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        }
+      }
+    ]);
+  };
+
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
-      {/* HEADER CENTRALIZADO */}
+      
+      {/* CONTROLES FLUTUANTES (Não quebram o layout) */}
+      <View style={styles.floatingControls}>
+        <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.floatBtn}>
+          <Ionicons name={isDarkMode ? "sunny" : "moon"} size={26} color={isDarkMode ? "#fbbf24" : "#1e293b"} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={fazerLogout} style={styles.floatBtn}>
+          <Ionicons name="log-out-outline" size={28} color="#ef4444" />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.header}>
         <Text style={[styles.welcome, isDarkMode && styles.textWhite]}>Olá, {loggedUser?.nome}!</Text>
         <Text style={[styles.date, isDarkMode && styles.textGray]}>{new Date().toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'})}</Text>
@@ -57,16 +81,19 @@ export default function HomeFuncionario({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc', padding: 25 },
-  bgDark: { backgroundColor: '#121212' }, // PRETO REAL PARA MODO ESCURO
+  bgDark: { backgroundColor: '#121212' },
   
-  // HEADER CENTRALIZADO (alignItems: 'center')
+  // POSICIONAMENTO ABSOLUTO: Fica sobreposto sem empurrar a tela
+  floatingControls: { position: 'absolute', top: 30, right: 25, flexDirection: 'row', zIndex: 10 },
+  floatBtn: { marginLeft: 15 },
+
   header: { marginTop: 40, marginBottom: 30, alignItems: 'center' },
   welcome: { fontSize: 26, fontWeight: '900', color: '#1e293b', textAlign: 'center' },
   date: { fontSize: 14, color: '#64748b', textTransform: 'capitalize', textAlign: 'center', marginTop: 5 },
   
   card: { padding: 30, borderRadius: 25, alignItems: 'center', marginBottom: 40, elevation: 4 },
   cardInactive: { backgroundColor: '#fff' },
-  cardDark: { backgroundColor: '#1e1e1e' }, // CINZA CHUMBO PARA CARDS
+  cardDark: { backgroundColor: '#1e1e1e' },
   cardActive: { backgroundColor: '#1e293b' },
   
   label: { fontSize: 12, fontWeight: 'bold', color: '#94a3b8' },

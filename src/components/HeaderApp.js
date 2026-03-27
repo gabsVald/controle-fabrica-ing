@@ -1,14 +1,31 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
+import { useNavigation } from '@react-navigation/native';
 
-export default function HeaderApp({ onBack, title }) {
-  const { isDarkMode, setIsDarkMode } = useContext(AppContext);
+export default function HeaderApp({ onBack, title, hideLogout }) {
+  const { isDarkMode, setIsDarkMode, setLoggedUser } = useContext(AppContext);
+  const navigation = useNavigation();
+
+  const fazerLogout = () => {
+    Alert.alert("Sair", "Deseja sair da sua conta?", [
+      { text: "Cancelar", style: "cancel" },
+      { 
+        text: "Sair", 
+        style: "destructive", 
+        onPress: () => {
+          setLoggedUser(null);
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        }
+      }
+    ]);
+  };
 
   return (
     <View style={[styles.header, isDarkMode ? styles.headerDark : styles.headerLight]}>
-      <View style={styles.sideContainer}>
+      {/* Lado Esquerdo (Botão Voltar) */}
+      <View style={styles.sideBox}>
         {onBack && (
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={isDarkMode ? "#f8fafc" : "#1e293b"} />
@@ -16,16 +33,22 @@ export default function HeaderApp({ onBack, title }) {
         )}
       </View>
 
-      <View style={styles.titleContainer}>
-        <Text style={[styles.headerTitle, isDarkMode ? styles.textDark : styles.textLight]}>
-          {title || "ING"}
-        </Text>
-      </View>
+      {/* Centro (Título) */}
+      <Text style={[styles.headerTitle, isDarkMode ? styles.textDark : styles.textLight]}>
+        {title || "ING"}
+      </Text>
 
-      <View style={styles.sideContainer}>
-        <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.themeBtn}>
+      {/* Lado Direito (Botões) */}
+      <View style={[styles.sideBox, styles.rightBox]}>
+        <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.iconBtn}>
           <Ionicons name={isDarkMode ? "sunny" : "moon"} size={22} color={isDarkMode ? "#fbbf24" : "#1e293b"} />
         </TouchableOpacity>
+
+        {!hideLogout && (
+          <TouchableOpacity onPress={fazerLogout} style={styles.iconBtn}>
+            <Ionicons name="log-out-outline" size={24} color="#ef4444" />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -41,12 +64,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerLight: { backgroundColor: '#fff', borderBottomColor: '#e2e8f0' },
-  headerDark: { backgroundColor: '#0f172a', borderBottomColor: '#334155' },
-  sideContainer: { width: 40, alignItems: 'center' },
-  titleContainer: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '900' },
+  headerDark: { backgroundColor: '#121212', borderBottomColor: '#333' },
+  
+  // As caixas laterais com largura fixa mantêm o título perfeitamente centralizado
+  sideBox: { width: 70, alignItems: 'flex-start' },
+  rightBox: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
+  
+  headerTitle: { fontSize: 18, fontWeight: '900', textAlign: 'center', flex: 1 },
   textLight: { color: '#1e293b' },
   textDark: { color: '#f8fafc' },
+  
   backButton: { padding: 5 },
-  themeBtn: { padding: 5 }
+  iconBtn: { padding: 5, marginLeft: 8 }
 });
