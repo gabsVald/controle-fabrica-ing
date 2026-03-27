@@ -16,6 +16,7 @@ import PontoSaidaScreen from '../screens/PontoSaidaScreen';
 import ChamadosScreen from '../screens/ChamadosScreen';
 import ComprasGestorScreen from '../screens/ComprasGestorScreen';
 import RelatorioPontoScreen from '../screens/RelatorioPontoScreen';
+import HistoricoFuncionarioScreen from '../screens/HistoricoFuncionarioScreen'; // Nova Importação
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -23,21 +24,23 @@ const Tab = createBottomTabNavigator();
 function EmployeeTabs() {
   const { isDarkMode } = useContext(AppContext);
   return (
-    <Tab.Navigator 
-      screenOptions={{ 
-        headerShown: false, 
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: '#2563eb',
-        tabBarStyle: { 
-          height: 65, 
+        tabBarStyle: {
+          height: 65,
           paddingBottom: 10,
-          backgroundColor: isDarkMode ? '#121212' : '#fff', // Corrigido para Preto Real
+          backgroundColor: isDarkMode ? '#121212' : '#fff',
           borderTopColor: isDarkMode ? '#333' : '#e2e8f0'
-        } 
+        }
       }}
     >
       <Tab.Screen name="Início" component={HomeFuncionario} options={{ tabBarIcon: ({color}) => <Ionicons name="home" size={24} color={color}/> }} />
       <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="build" size={24} color={color}/> }} />
       <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="time" size={24} color={color}/> }} />
+      {/* NOVA GUIA DE HISTÓRICO */}
+      <Tab.Screen name="Histórico" component={HistoricoFuncionarioScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="list" size={24} color={color}/> }} />
       <Tab.Screen name="Compras" component={ComprasScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="cash" size={24} color={color}/> }} />
     </Tab.Navigator>
   );
@@ -46,21 +49,22 @@ function EmployeeTabs() {
 function ManagerTabs() {
   const { isDarkMode } = useContext(AppContext);
   return (
-    <Tab.Navigator 
-      screenOptions={{ 
-        headerShown: false, 
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: isDarkMode ? '#38bdf8' : '#1e293b',
-        tabBarStyle: { 
-          height: 65, 
+        tabBarStyle: {
+          height: 65,
           paddingBottom: 10,
-          backgroundColor: isDarkMode ? '#121212' : '#fff', // Corrigido para Preto Real
+          backgroundColor: isDarkMode ? '#121212' : '#fff',
           borderTopColor: isDarkMode ? '#333' : '#e2e8f0'
-        } 
+        }
       }}
     >
       <Tab.Screen name="Relatórios" component={RelatorioPontoScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="document-text" size={24} color={color}/> }} />
-      {/* ABA DE CHAMADOS ADICIONADA PARA O GESTOR */}
       <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="build" size={24} color={color}/> }} />
+      {/* GESTOR TAMBÉM VÊ O SEU HISTÓRICO PESSOAL */}
+      <Tab.Screen name="Meu Histórico" component={HistoricoFuncionarioScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="list" size={24} color={color}/> }} />
       <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="warning" size={24} color={color}/> }} />
       <Tab.Screen name="Compras" component={ComprasGestorScreen} options={{ tabBarIcon: ({color}) => <Ionicons name="cart" size={24} color={color}/> }} />
     </Tab.Navigator>

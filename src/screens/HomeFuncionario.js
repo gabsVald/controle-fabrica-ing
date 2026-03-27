@@ -28,18 +28,18 @@ export default function HomeFuncionario({ navigation }) {
   }, [statusPonto, dadosAtividade]);
 
   const fazerLogout = () => {
+    const mensagem = "Deseja sair da sua conta?";
     if (Platform.OS === 'web') {
-      const confirma = window.confirm("Deseja sair da sua conta?");
-      if (confirma) {
+      if (window.confirm(mensagem)) {
         setLoggedUser(null);
         navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
       }
     } else {
-      Alert.alert("Sair", "Deseja sair da sua conta?", [
+      Alert.alert("Sair", mensagem, [
         { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sair", 
-          style: "destructive", 
+        {
+          text: "Sair",
+          style: "destructive",
           onPress: () => {
             setLoggedUser(null);
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
@@ -52,7 +52,6 @@ export default function HomeFuncionario({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
       
-      {/* CONTROLES FLUTUANTES */}
       <View style={styles.floatingControls}>
         <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.floatBtn}>
           <Ionicons name={isDarkMode ? "sunny" : "moon"} size={26} color={isDarkMode ? "#fbbf24" : "#1e293b"} />
@@ -64,12 +63,20 @@ export default function HomeFuncionario({ navigation }) {
 
       <View style={styles.header}>
         <Text style={[styles.welcome, isDarkMode && styles.textWhite]}>Olá, {loggedUser?.nome}!</Text>
-        <Text style={[styles.date, isDarkMode && styles.textGray]}>{new Date().toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'})}</Text>
+        <Text style={[styles.date, isDarkMode && styles.textGray]}>
+          {new Date().toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'})}
+        </Text>
       </View>
 
-      <View style={[styles.card, statusPonto === 'trabalhando' ? styles.cardActive : (isDarkMode ? styles.cardDark : styles.cardInactive)]}>
+      <View style={[
+        styles.card, 
+        statusPonto === 'trabalhando' ? styles.cardActive : (isDarkMode ? styles.cardDark : styles.cardInactive)
+      ]}>
         <Text style={styles.label}>{statusPonto === 'trabalhando' ? 'EM ATIVIDADE' : 'SISTEMA AGUARDANDO'}</Text>
-        <Text style={[styles.timer, statusPonto === 'trabalhando' ? styles.timerActive : (isDarkMode && styles.timerDark)]}>
+        <Text style={[
+          styles.timer, 
+          statusPonto === 'trabalhando' ? styles.timerActive : (isDarkMode ? styles.timerDark : styles.timerInactive)
+        ]}>
           {statusPonto === 'trabalhando' ? timer : '--:--'}
         </Text>
         {statusPonto === 'trabalhando' && (
@@ -77,12 +84,15 @@ export default function HomeFuncionario({ navigation }) {
         )}
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.btnAction, statusPonto === 'ausente' ? styles.bgGreen : styles.bgRed]}
         onPress={() => navigation.navigate(statusPonto === 'ausente' ? 'PontoEntrada' : 'PontoSaida')}
       >
-        <Text style={styles.btnText}>{statusPonto === 'ausente' ? 'REGISTRAR ENTRADA' : 'REGISTRAR SAÍDA'}</Text>
+        <Text style={styles.btnText}>
+          {statusPonto === 'ausente' ? 'REGISTRAR ENTRADA' : 'REGISTRAR SAÍDA'}
+        </Text>
       </TouchableOpacity>
+
     </SafeAreaView>
   );
 }
@@ -90,30 +100,25 @@ export default function HomeFuncionario({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc', padding: 25 },
   bgDark: { backgroundColor: '#121212' },
-  
   floatingControls: { position: 'absolute', top: 30, right: 25, flexDirection: 'row', zIndex: 10 },
   floatBtn: { marginLeft: 15 },
-
   header: { marginTop: 40, marginBottom: 30, alignItems: 'center' },
   welcome: { fontSize: 26, fontWeight: '900', color: '#1e293b', textAlign: 'center' },
   date: { fontSize: 14, color: '#64748b', textTransform: 'capitalize', textAlign: 'center', marginTop: 5 },
-  
   card: { padding: 30, borderRadius: 25, alignItems: 'center', marginBottom: 40, elevation: 4 },
   cardInactive: { backgroundColor: '#fff' },
   cardDark: { backgroundColor: '#1e1e1e' },
   cardActive: { backgroundColor: '#1e293b' },
-  
   label: { fontSize: 12, fontWeight: 'bold', color: '#94a3b8' },
-  timer: { fontSize: 50, fontWeight: 'bold', marginVertical: 15, color: '#94a3b8' },
+  timer: { fontSize: 50, fontWeight: 'bold', marginVertical: 15 },
+  timerInactive: { color: '#94a3b8' },
   timerActive: { color: '#38bdf8' },
   timerDark: { color: '#52525b' },
   info: { color: '#94a3b8', fontWeight: 'bold' },
-  
-  btnAction: { padding: 25, borderRadius: 20, alignItems: 'center' },
+  btnAction: { padding: 22, borderRadius: 20, alignItems: 'center', elevation: 2 },
   bgGreen: { backgroundColor: '#16a34a' },
   bgRed: { backgroundColor: '#ef4444' },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-  
   textWhite: { color: '#ffffff' },
   textGray: { color: '#a1a1aa' }
 });
