@@ -46,6 +46,7 @@ export default function CadastroScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <HeaderApp onBack={() => navigation.goBack()} title="Criar Conta" hideLogout={true} />
       <View style={styles.content}>
+        <TextInput style={styles.input} placeholder="Nome cCompleto" value={nome} onChangeText={setNome} autoCapitalize="none" />
         <TextInput style={styles.input} placeholder="Usuário" value={email} onChangeText={setEmail} autoCapitalize="none" />
         <TextInput style={styles.input} placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
         

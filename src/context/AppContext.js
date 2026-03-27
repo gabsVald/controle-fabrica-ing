@@ -3,6 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initialUsers } from '../data/data';
 import { setoresDB } from '../data/setoresDB';
 
+// IMPORTS DO FIREBASE (Novo!)
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../config/firebase'; // <--- Confirme se o caminho está certo!
+
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
@@ -19,64 +23,75 @@ export const AppProvider = ({ children }) => {
   const [statusPonto, setStatusPonto] = useState('ausente'); 
   const [dadosAtividade, setDadosAtividade] = useState({ inicio: null, setor: '', subsetor: '' });
 
+  // 1. CARREGAR DADOS DO FIREBASE EM TEMPO REAL
   useEffect(() => {
-    const load = async () => {
-      try {
-        // Adicionámos o '@users' à lista de ficheiros a carregar
-        const [p, s, c, a, ch, theme, u] = await Promise.all([
-          AsyncStorage.getItem('@ponto'),
-          AsyncStorage.getItem('@servicos'),
-          AsyncStorage.getItem('@compras'),
-          AsyncStorage.getItem('@atividade'),
-          AsyncStorage.getItem('@chamados'),
-          AsyncStorage.getItem('@theme'),
-          AsyncStorage.getItem('@users') 
-        ]);
-        
-        if (p) setRegistrosPonto(JSON.parse(p) || []);
-        if (s) setServicosIncompletos(JSON.parse(s) || []);
-        if (c) setSolicitacoesCompra(JSON.parse(c) || []);
-        if (ch) setChamados(JSON.parse(ch) || []);
-        if (theme) setIsDarkMode(JSON.parse(theme));
-        
-        // Se encontrar utilizadores guardados, carrega-os para a lista
-        if (u) {
-          const parsedUsers = JSON.parse(u);
-          if (parsedUsers && parsedUsers.length > 0) {
-            setUsersList(parsedUsers);
-          }
-        }
+    // Referência para o nosso "Cofre" na nuvem
+    const docRef = doc(db, "banco_ing", "dados_globais");
 
-        if (a) {
-          const act = JSON.parse(a);
-          if (act) {
-            setDadosAtividade(act);
-            setStatusPonto(act.inicio ? 'trabalhando' : 'ausente');
-          }
-        }
-      } catch (e) { 
-        console.error("Erro ao carregar dados:", e); 
+    // onSnapshot fica "escutando" o banco 24h por dia. 
+    // Se o gestor mudar algo no PC, o celular do funcionário atualiza na mesma hora!
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const dadosNuvem = docSnap.data();
+        
+        if (dadosNuvem.registrosPonto) setRegistrosPonto(dadosNuvem.registrosPonto);
+        if (dadosNuvem.servicosIncompletos) setServicosIncompletos(dadosNuvem.servicosIncompletos);
+        if (dadosNuvem.solicitacoesCompra) setSolicitacoesCompra(dadosNuvem.solicitacoesCompra);
+        if (dadosNuvem.chamados) setChamados(dadosNuvem.chamados);
+        if (dadosNuvem.usersList) setUsersList(dadosNuvem.usersList);
+      } else {
+        // Se o documento não existir (primeira vez rodando o app), ele vai criar vazio
+        console.log("Banco na nuvem vazio. Criando estrutura inicial...");
+      }
+    });
+
+    // Carrega coisas locais que não precisam ir pra nuvem (ex: Tema Escuro e Estado atual do Ponto do celular)
+    const loadLocal = async () => {
+      const theme = await AsyncStorage.getItem('@theme');
+      const ativ = await AsyncStorage.getItem('@atividade');
+      if (theme) setIsDarkMode(JSON.parse(theme));
+      if (ativ) {
+        const act = JSON.parse(ativ);
+        setDadosAtividade(act);
+        setStatusPonto(act.inicio ? 'trabalhando' : 'ausente');
       }
     };
-    load();
+    loadLocal();
+
+    return () => unsubscribe(); // Para de escutar o banco se fechar o app
   }, []);
 
+  // 2. SALVAR DADOS NO FIREBASE SEMPRE QUE HOUVER MUDANÇA
   useEffect(() => {
-    const saveData = async () => {
+    const salvarNaNuvem = async () => {
+      // Evita apagar os dados do Firebase na primeira fração de segundo que o app abre vazio
+      if (usersList.length === 0) return; 
+
       try {
-        await AsyncStorage.setItem('@ponto', JSON.stringify(registrosPonto));
-        await AsyncStorage.setItem('@servicos', JSON.stringify(servicosIncompletos));
-        await AsyncStorage.setItem('@compras', JSON.stringify(solicitacoesCompra));
-        await AsyncStorage.setItem('@chamados', JSON.stringify(chamados));
-        await AsyncStorage.setItem('@atividade', JSON.stringify(dadosAtividade));
-        await AsyncStorage.setItem('@theme', JSON.stringify(isDarkMode));
-        // Guarda a lista de utilizadores sempre que alguém criar uma conta nova
-        await AsyncStorage.setItem('@users', JSON.stringify(usersList)); 
-      } catch (e) { console.error("Erro ao salvar:", e); }
+        const docRef = doc(db, "banco_ing", "dados_globais");
+        
+        // setDoc envia todos esses arrays para a nuvem
+        await setDoc(docRef, {
+          registrosPonto,
+          servicosIncompletos,
+          solicitacoesCompra,
+          chamados,
+          usersList
+        }, { merge: true }); // merge: true garante que ele só atualize o que mudou
+
+      } catch (e) {
+        console.error("Erro ao salvar no Firebase:", e);
+      }
     };
-    saveData();
-  // Adicionámos usersList aqui para que o sistema saiba que deve guardar ao haver alterações nela
-  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, dadosAtividade, isDarkMode, usersList]);
+
+    salvarNaNuvem();
+  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, usersList]);
+
+  // Salva os dados locais (apenas o que é do aparelho da pessoa)
+  useEffect(() => {
+    AsyncStorage.setItem('@atividade', JSON.stringify(dadosAtividade));
+    AsyncStorage.setItem('@theme', JSON.stringify(isDarkMode));
+  }, [dadosAtividade, isDarkMode]);
 
   return (
     <AppContext.Provider value={{
