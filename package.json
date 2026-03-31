@@ -1,19 +1,22 @@
 {
   "name": "controle-fabrica-ing",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:web": "npx expo export --platform web",
-    "electron:start": "electron .",
+    "electron:start": "electron main.js",
     "electron:build": "npm run build:web && electron-builder"
   },
   "build": {
     "appId": "com.gabriel.ingcontrole",
     "productName": "Controle Fábrica ING",
+    "extraMetadata": {
+      "main": "main.js"
+    },
     "directories": {
       "output": "dist-electron"
     },

@@ -6,32 +6,48 @@ import HeaderApp from '../components/HeaderApp';
 export default function PontoEntradaScreen({ navigation }) {
   const { setores, setRegistrosPonto, registrosPonto, setStatusPonto, setDadosAtividade, loggedUser, isDarkMode } = useContext(AppContext);
   
-  // Estado para controlar qual setor foi clicado
+  // Estado para controlar qual setor foi clicado (para quando houver vários subsetores)
   const [setorObjeto, setSetorObjeto] = useState(null);
 
-  const handleConfirmar = (subNome) => {
+  // Função centralizada para registrar a entrada no Firebase/Estado
+  const confirmarEntrada = (nomeSetor, nomeSub) => {
     const agora = new Date();
     const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+    // 1. Atualiza o cronômetro na Home
     setDadosAtividade({ 
       inicio: agora.toISOString(), 
-      setor: setorObjeto.nome, 
-      subsetor: subNome 
+      setor: nomeSetor, 
+      subsetor: nomeSub 
     });
 
+    // 2. Cria o novo registro de histórico
     const novo = {
       id: Math.random().toString(),
       nome: loggedUser?.nome || "Operador",
       data: agora.toLocaleDateString('pt-BR'),
       horaEntrada: horaFormatada,
-      setor: setorObjeto.nome,
-      subsetor: subNome,
+      setor: nomeSetor,
+      subsetor: nomeSub,
       status: 'trabalhando'
     };
 
     setRegistrosPonto([novo, ...registrosPonto]);
     setStatusPonto('trabalhando');
+    
+    // 3. Volta para a navegação principal (Home)
     navigation.navigate('MainFunc');
+  };
+
+  // Lógica inteligente de clique no setor
+  const handlePressSetor = (s) => {
+    if (s.subsetores && s.subsetores.length === 1) {
+      // Se tiver apenas 1 (ex: "Geral"), entra direto
+      confirmarEntrada(s.nome, s.subsetores[0]);
+    } else {
+      // Se tiver vários (Marcenaria/Metalúrgica), mostra a lista
+      setSetorObjeto(s);
+    }
   };
 
   return (
@@ -44,24 +60,24 @@ export default function PontoEntradaScreen({ navigation }) {
 
         <View style={styles.grid}>
           {!setorObjeto ? (
-            // PASSO 1: MOSTRAR SETORES
+            // PASSO 1: LISTA DE SETORES GERAIS
             setores.map(s => (
               <TouchableOpacity
                 key={s.id}
                 style={[styles.card, isDarkMode && styles.cardDark]}
-                onPress={() => setSetorObjeto(s)}
+                onPress={() => handlePressSetor(s)}
               >
                 <Text style={[styles.cardText, isDarkMode && styles.textWhite]}>{s.nome}</Text>
               </TouchableOpacity>
             ))
           ) : (
-            // PASSO 2: MOSTRAR SUBSETORES DO SETOR ESCOLHIDO
+            // PASSO 2: LISTA DE MÁQUINAS/SUBSETORES (Somente se houver mais de um)
             <>
               {setorObjeto.subsetores.map((sub, index) => (
                 <TouchableOpacity
                   key={index}
                   style={[styles.card, styles.cardSub]}
-                  onPress={() => handleConfirmar(sub)}
+                  onPress={() => confirmarEntrada(setorObjeto.nome, sub)}
                 >
                   <Text style={styles.textWhite}>{sub}</Text>
                 </TouchableOpacity>
@@ -103,7 +119,7 @@ const styles = StyleSheet.create({
   },
   cardDark: { backgroundColor: '#1e1e1e' },
   cardSub: { backgroundColor: '#2563eb' },
-  cardText: { fontWeight: 'bold', color: '#1e293b', textAlign: 'center' },
+  cardText: { fontWeight: 'bold', color: '#1e293b', textAlign: 'center', paddingHorizontal: 5 },
   textWhite: { color: '#ffffff', fontWeight: 'bold', textAlign: 'center' },
   btnVoltar: { width: '100%', alignItems: 'center', padding: 20 },
   textVoltar: { color: '#64748b', fontWeight: 'bold' }
