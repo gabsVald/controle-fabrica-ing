@@ -2,42 +2,70 @@ export const setoresDB = [
   { 
     id: '1', 
     nome: 'Marcenaria', 
-    subsetores: ['Corte', 'Borda', 'Montagem de Móveis', 'Acabamento'] 
+    subsetores: [
+      'Montagem', 
+      'ROVER EDGE', 
+      'ROVER 5 EIXOS', 
+      'ROVER A NESTING', 
+      'ROVER MULTI PRO', 
+      'SECCIONADORA', 
+      'COLADEIRA ANTIGA', 
+      'COLADEIRA NOVA', 
+      'COLADEIRA MANUAL', 
+      'CENTRO DE FURAÇÃO', 
+      'ORGANIZADOR DE CHAPAS', 
+      'MÁQUINAS PEQUENAS', 
+      'PRENSAS'
+    ] 
   },
   { 
     id: '2', 
     nome: 'Metalúrgica', 
-    subsetores: ['Solda', 'Corte/Guilhotina', 'Dobra', 'Puncionadeira', 'Esmerilhamento'] 
+    subsetores: [
+      'CORTE - LASER TUBO', 
+      'CORTE - LASER CHAPA', 
+      'CORTE - PUNCIONADEIRA', 
+      'CORTE - SERRA FITA', 
+      'CORTE - SERRA TUBO', 
+      'CORTE - PONTE ROLANTE', 
+      'DOBRA - ADIRA 3M', 
+      'DOBRA - ADIRA 2M', 
+      'DOBRA - HGTECH 3M (EMT)', 
+      'DOBRA - PRENSA DE 180TON', 
+      'DOBRA - PRENSA UNISTAMP 40TON', 
+      'DOBRA - RANHURADORA V_GROOVING', 
+      'SOLDA - ROBÔ REVOCELL GRANDE', 
+      'SOLDA - ROBÔ ANGLECELL PEQ.', 
+      'SOLDA - BOX DE SOLDA', 
+      'ACABAMENTO - DECAPAGEM', 
+      'ACABAMENTO - LIXADEIRA DE TUBO', 
+      'ACABAMENTO - LIXADEIRA DE CINTAS', 
+      'ACABAMENTO - BANCADAS'
+    ] 
   },
   { 
     id: '3', 
-    nome: 'Pintura', 
-    subsetores: ['Preparação/Lixamento', 'Pintura a Pó', 'Pintura Líquida', 'Secagem/Estufa'] 
+    nome: 'Embalagem', 
+    subsetores: ['Geral'] 
   },
   { 
     id: '4', 
-    nome: 'Montagem', 
-    subsetores: ['Linha de Montagem A', 'Linha de Montagem B', 'Embalagem Final'] 
+    nome: 'Pintura Epóxi', 
+    subsetores: ['Geral'] 
   },
   { 
     id: '5', 
-    nome: 'Usinagem', 
-    subsetores: ['Torno CNC', 'Fresadora', 'Centro de Usinagem', 'Retífica'] 
+    nome: 'Pintura Líquida', 
+    subsetores: ['Geral'] 
   },
-
   { 
     id: '6', 
-    nome: 'Almoxarifado', 
-    subsetores: ['Recebimento', 'Expedição Interna', 'Inventário'] 
-  },
-  { 
-    id: '7', 
-    nome: 'Inspeção / Qualidade', 
-    subsetores: ['Medição', 'Testes de Funcionamento', 'Retrabalho'] 
-  },
-  { 
-    id: '8', 
-    nome: 'Expedição', 
-    subsetores: ['Carregamento', 'Logística', 'Embalagem de Transporte'] 
+    nome: 'Depósitos', 
+    subsetores: [
+      'DEPÓSITO I', 
+      'DEPÓSITO II', 
+      'DEPÓSITO III', 
+      'DOCAS'
+    ] 
   }
 ];
