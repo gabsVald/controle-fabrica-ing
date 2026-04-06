@@ -1,8 +1,11 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import HeaderApp from '../components/HeaderApp';
+
+// ✅ Gerador de ID único
+const gerarId = () => Date.now().toString() + Math.random().toString(36).slice(2);
 
 export default function ServicosScreen({ navigation }) {
   const {
@@ -18,16 +21,14 @@ export default function ServicosScreen({ navigation }) {
     }
 
     const agora = new Date();
-    // Prepara os dados para a tela de cronômetro na Home
     setDadosAtividade({ 
       inicio: agora.toISOString(), 
       setor: item.setor || 'Geral', 
       subsetor: item.subsetor || 'N/A' 
     });
 
-    // Cria o novo registro de quem está assumindo a bucha agora
     const novoRegistro = {
-      id: Math.random().toString(),
+      id: gerarId(), // ✅ ID único
       nome: loggedUser?.nome,
       data: agora.toLocaleDateString('pt-BR'),
       horaEntrada: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -38,10 +39,7 @@ export default function ServicosScreen({ navigation }) {
 
     setRegistrosPonto([novoRegistro, ...registrosPonto]);
     setStatusPonto('trabalhando');
-    
-    // Remove da lista de pendentes
     setServicosIncompletos(servicosIncompletos.filter(s => s.id !== item.id));
-    
     navigation.navigate('Início');
   };
 
@@ -51,14 +49,11 @@ export default function ServicosScreen({ navigation }) {
         <Text style={styles.tag}>{item.setor} › {item.subsetor}</Text>
         <Text style={[styles.prioridade, item.prioridade === 'Alta' && {color: '#ef4444'}]}>{item.prioridade || 'Média'}</Text>
       </View>
-
       <Text style={[styles.desc, isDarkMode && {color: '#fff'}]}>{item.descricao}</Text>
       <Text style={styles.autor}>Relatado por: {item.criadoPor || 'N/A'}</Text>
-
       {item.foto && (
         <Image source={{ uri: item.foto }} style={styles.fotoServico} />
       )}
-     
       {loggedUser?.perfil !== 'gestor' && (
         <TouchableOpacity style={styles.btnRetomar} onPress={() => retomarServico(item)}>
           <Ionicons name="play-circle-outline" size={20} color="#fff" />

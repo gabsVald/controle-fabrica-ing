@@ -13,23 +13,21 @@ export default function HistoricoFuncionarioScreen({ navigation }) {
     isDarkMode 
   } = useContext(AppContext);
 
-  // Consolida todos os eventos em uma única lista cronológica
   const historicoGeral = useMemo(() => {
     const nomeUsuario = loggedUser?.nome;
 
-    // 1. Formata registros de serviço (Antigo PONTO)
     const servicos = registrosPonto
       .filter(r => r.nome === nomeUsuario || r.usuario === nomeUsuario)
       .map(r => ({
         ...r,
-        tipo: 'SERVIÇO', // Alterado de PONTO para SERVIÇO
+        tipo: 'SERVIÇO',
         icone: 'time-outline',
         cor: '#2563eb',
         dataReferencia: r.data || new Date(r.inicio).toLocaleDateString(),
-        titulo: `${r.setor} › ${r.subsetor}`
+        titulo: `${r.setor} › ${r.subsetor}`,
+        _timestamp: r.inicio ? new Date(r.inicio).getTime() : 0,
       }));
 
-    // 2. Formata chamados
     const manutencao = chamados
       .filter(c => c.criadoPor === nomeUsuario)
       .map(c => ({
@@ -38,10 +36,10 @@ export default function HistoricoFuncionarioScreen({ navigation }) {
         icone: 'build-outline',
         cor: '#ea580c',
         dataReferencia: c.data || "Hoje",
-        titulo: `Chamado: ${c.setor}`
+        titulo: `Chamado: ${c.setor}`,
+        _timestamp: c.id ? parseInt(c.id) : 0,
       }));
 
-    // 3. Formata compras
     const compras = solicitacoesCompra
       .filter(pc => pc.autor === nomeUsuario)
       .map(pc => ({
@@ -50,11 +48,12 @@ export default function HistoricoFuncionarioScreen({ navigation }) {
         icone: 'cart-outline',
         cor: '#16a34a',
         dataReferencia: pc.data || "Hoje",
-        titulo: `Compra: ${pc.item}`
+        titulo: `Compra: ${pc.item}`,
+        _timestamp: pc.id ? parseInt(pc.id) : 0,
       }));
 
-    // Junta tudo e inverte para mostrar o mais recente primeiro
-    return [...servicos, ...manutencao, ...compras].reverse(); 
+    // ✅ Ordena por timestamp real (mais recente primeiro) em vez de só inverter o array
+    return [...servicos, ...manutencao, ...compras].sort((a, b) => b._timestamp - a._timestamp);
   }, [registrosPonto, chamados, solicitacoesCompra, loggedUser]);
 
   const renderItem = ({ item }) => (

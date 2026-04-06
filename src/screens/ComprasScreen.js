@@ -1,8 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, SafeAreaView } from 'react-native'; // ✅ SafeAreaView adicionado
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
-import { ShoppingCart } from 'lucide-react-native'; // Lucide aqui
+import { ShoppingCart } from 'lucide-react-native';
+
+// ✅ Gerador de ID único
+const gerarId = () => Date.now().toString() + Math.random().toString(36).slice(2);
 
 export default function ComprasScreen({ navigation }) {
   const { solicitacoesCompra, setSolicitacoesCompra, loggedUser, isDarkMode } = useContext(AppContext);
@@ -14,7 +17,14 @@ export default function ComprasScreen({ navigation }) {
     if (!item || !quantidade) return Alert.alert("Erro", "Preencha o item e a quantidade.");
     setEnviando(true);
     setTimeout(() => {
-      const novaCompra = { id: Math.random().toString(), item, quantidade, autor: loggedUser?.nome, data: new Date().toLocaleDateString('pt-BR'), status: 'Pendente' };
+      const novaCompra = {
+        id: gerarId(), // ✅ ID único
+        item,
+        quantidade,
+        autor: loggedUser?.nome,
+        data: new Date().toLocaleDateString('pt-BR'),
+        status: 'Pendente'
+      };
       setSolicitacoesCompra([novaCompra, ...solicitacoesCompra]);
       setItem(''); setQuantidade(''); setEnviando(false);
       Alert.alert("Sucesso!", "Solicitação enviada.");
@@ -22,7 +32,8 @@ export default function ComprasScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, isDarkMode && styles.bgDark]}>
+    // ✅ Trocado View por SafeAreaView para evitar conteúdo atrás da status bar
+    <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
       <HeaderApp title="Solicitar Compra" onBack={() => navigation.goBack()} />
       <View style={styles.form}>
         <Text style={[styles.label, isDarkMode && styles.textDark]}>O que está faltando?</Text>
@@ -38,7 +49,7 @@ export default function ComprasScreen({ navigation }) {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

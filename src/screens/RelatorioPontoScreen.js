@@ -2,7 +2,7 @@ import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
-import { Search, Trash2, Trash } from 'lucide-react-native'; // Lucide aqui
+import { Search, Trash2, Trash } from 'lucide-react-native';
 
 export default function RelatorioPontoScreen() {
   const { registrosPonto, setRegistrosPonto, isDarkMode, setLoggedUser } = useContext(AppContext);
@@ -64,7 +64,8 @@ export default function RelatorioPontoScreen() {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
-      <HeaderApp title="Relatórios" onBack={() => setLoggedUser(null)} />
+      {/* ✅ onBack removido — o logout já está no botão de saída dentro do HeaderApp */}
+      <HeaderApp title="Relatórios" />
       <View style={{ padding: 15 }}>
         <View style={[styles.searchBar, isDarkMode && styles.searchBarDark]}>
           <Search size={20} color="#94a3b8" />

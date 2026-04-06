@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Pastas de Build do Electron / Web
+dist-electron/
+dist/
+build/

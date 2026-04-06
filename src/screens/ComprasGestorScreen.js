@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert, Platform } from 'react-native'; // ✅ Platform adicionado
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
-import { CheckCircle, XCircle } from 'lucide-react-native'; // Lucide aqui
+import { CheckCircle, XCircle, Trash2 } from 'lucide-react-native';
 
 export default function ComprasGestorScreen() {
   const { solicitacoesCompra, setSolicitacoesCompra, isDarkMode } = useContext(AppContext);
@@ -10,14 +10,33 @@ export default function ComprasGestorScreen() {
   const atualizarStatus = (id, novoStatus) => {
     const novos = solicitacoesCompra.map(p => p.id === id ? { ...p, status: novoStatus } : p);
     setSolicitacoesCompra(novos);
-    Alert.alert("Sucesso", `Pedido ${novoStatus}!`);
+    if (Platform.OS !== 'web') Alert.alert("Sucesso", `Pedido ${novoStatus}!`);
+  };
+
+  // ✅ Função blindada (Web e Android)
+  const excluirCompra = (id) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm("Deseja apagar esta requisição do histórico?")) {
+        setSolicitacoesCompra(prev => prev.filter(c => c.id !== id));
+      }
+    } else {
+      Alert.alert("Excluir", "Deseja apagar esta requisição do histórico?", [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Apagar", style: "destructive", onPress: () => setSolicitacoesCompra(prev => prev.filter(c => c.id !== id)) }
+      ]);
+    }
   };
 
   const renderItem = ({ item }) => (
     <View style={[styles.card, isDarkMode && styles.cardDark]}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.itemNome, isDarkMode && styles.textWhite]}>{item.item}</Text>
-        <Text style={styles.statusTag}>{item.status}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.itemNome, isDarkMode && styles.textWhite]}>{item.item}</Text>
+          <Text style={styles.statusTag}>{item.status}</Text>
+        </View>
+        <TouchableOpacity onPress={() => excluirCompra(item.id)} style={{ padding: 5 }}>
+          <Trash2 size={22} color="#ef4444" />
+        </TouchableOpacity>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.infoText}>Solicitante: {item.autor}</Text>
@@ -41,7 +60,13 @@ export default function ComprasGestorScreen() {
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
       <HeaderApp title="Gestão de Compras" />
-      <FlatList data={solicitacoesCompra} keyExtractor={item => item.id} renderItem={renderItem} contentContainerStyle={{ padding: 20 }} ListEmptyComponent={<Text style={styles.emptyText}>Sem solicitações.</Text>} />
+      <FlatList 
+        data={solicitacoesCompra} 
+        keyExtractor={item => item.id} 
+        renderItem={renderItem} 
+        contentContainerStyle={{ padding: 20 }} 
+        ListEmptyComponent={<Text style={styles.emptyText}>Sem solicitações.</Text>} 
+      />
     </SafeAreaView>
   );
 }

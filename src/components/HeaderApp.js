@@ -1,14 +1,16 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../context/AppContext';
 
-// Ícones SVG da Lucide (Não dão erro de quadradinho na web)
 import { ArrowLeft, Sun, Moon, LogOut } from 'lucide-react-native';
 
 export default function HeaderApp({ onBack, title, hideLogout }) {
   const { isDarkMode, setIsDarkMode, setLoggedUser } = useContext(AppContext);
   const navigation = useNavigation();
+
+  // Calcula a altura da barra do sistema (somente no Android)
+  const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
 
   const fazerLogout = () => {
     const mensagem = "Deseja sair da sua conta?";
@@ -34,7 +36,12 @@ export default function HeaderApp({ onBack, title, hideLogout }) {
   };
 
   return (
-    <View style={[styles.header, isDarkMode ? styles.headerDark : styles.headerLight]}>
+    <View style={[
+      styles.header, 
+      isDarkMode ? styles.headerDark : styles.headerLight,
+      // Adicionamos a altura da barra no tamanho do header para empurrar os botões para baixo
+      { paddingTop: statusBarHeight, height: 60 + statusBarHeight } 
+    ]}>
       {/* Lado Esquerdo (Botão Voltar) */}
       <View style={styles.sideBox}>
         {onBack && (
@@ -77,14 +84,11 @@ export default function HeaderApp({ onBack, title, hideLogout }) {
 
 const styles = StyleSheet.create({
   header: {
-    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    // Ajuste para Web (SafeArea)
-    marginTop: Platform.OS === 'ios' ? 0 : 0, 
   },
   headerLight: { 
     backgroundColor: '#fff', 

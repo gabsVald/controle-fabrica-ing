@@ -1,8 +1,10 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Alert, Platform } from 'react-native'; // ✅ Platform adicionado
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
-import { PlusCircle } from 'lucide-react-native'; // Lucide aqui
+import { PlusCircle, Trash2 } from 'lucide-react-native';
+
+const gerarId = () => Date.now().toString() + Math.random().toString(36).slice(2);
 
 export default function ChamadosScreen({ navigation }) {
   const { chamados, setChamados, loggedUser, isDarkMode, statusPonto, setDadosAtividade, setRegistrosPonto, registrosPonto, setStatusPonto } = useContext(AppContext);
@@ -12,17 +14,36 @@ export default function ChamadosScreen({ navigation }) {
 
   const criarChamado = () => {
     if (!setor || !descricao) return Alert.alert("Erro", "Preencha setor e descrição.");
-    const chamado = { id: Math.random().toString(), setor, subsetor: 'Programado', descricao, criadoPor: loggedUser.nome, status: 'Aberto' };
+    const chamado = { id: gerarId(), setor, subsetor: 'Programado', descricao, criadoPor: loggedUser.nome, status: 'Aberto' };
     setChamados([chamado, ...chamados]);
     setSetor(''); setDescricao(''); setNovoChamado(false);
-    Alert.alert("Sucesso", "Chamado programado criado!");
+    if (Platform.OS !== 'web') Alert.alert("Sucesso", "Chamado programado criado!");
+  };
+
+  // ✅ Função corrigida à prova de falhas (Web e Android)
+  const excluirChamado = (id) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm("Deseja realmente apagar este chamado?")) {
+        setChamados(prev => prev.filter(c => c.id !== id));
+      }
+    } else {
+      Alert.alert("Excluir", "Deseja realmente apagar este chamado?", [
+        { text: "Cancelar", style: "cancel" },
+        // ✅ Uso do 'prev' garante que apaga o item certo mesmo se a nuvem demorar
+        { text: "Apagar", style: "destructive", onPress: () => setChamados(prev => prev.filter(c => c.id !== id)) }
+      ]);
+    }
   };
 
   const comecarChamado = (item) => {
     if (statusPonto === 'trabalhando') return Alert.alert("Erro", "Finalize a tarefa atual.");
     const agora = new Date();
     setDadosAtividade({ inicio: agora.toISOString(), setor: item.setor, subsetor: item.subsetor });
-    setRegistrosPonto([{ id: Math.random().toString(), nome: loggedUser.nome, data: agora.toLocaleDateString('pt-BR'), horaEntrada: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), setor: item.setor, subsetor: item.subsetor, status: 'trabalhando' }, ...registrosPonto]);
+    setRegistrosPonto([{
+      id: gerarId(), nome: loggedUser.nome, data: agora.toLocaleDateString('pt-BR'),
+      horaEntrada: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      setor: item.setor, subsetor: item.subsetor, status: 'trabalhando'
+    }, ...registrosPonto]);
     setStatusPonto('trabalhando');
     setChamados(chamados.filter(c => c.id !== item.id));
     navigation.navigate('Início');
@@ -55,8 +76,17 @@ export default function ChamadosScreen({ navigation }) {
               ListEmptyComponent={<Text style={styles.empty}>Nenhum chamado programado.</Text>}
               renderItem={({ item }) => (
                 <View style={[styles.card, isDarkMode && styles.cardDark]}>
-                  <Text style={styles.tag}>{item.setor}</Text>
-                  <Text style={[styles.desc, isDarkMode && styles.textDark]}>{item.descricao}</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.tag}>{item.setor}</Text>
+                      <Text style={[styles.desc, isDarkMode && styles.textDark]}>{item.descricao}</Text>
+                    </View>
+                    {loggedUser?.perfil === 'gestor' && (
+                      <TouchableOpacity onPress={() => excluirChamado(item.id)} style={{ padding: 5 }}>
+                        <Trash2 size={22} color="#ef4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   {loggedUser?.perfil !== 'gestor' && (
                     <TouchableOpacity style={styles.btnStart} onPress={() => comecarChamado(item)}>
                       <Text style={styles.btnText}>COMEÇAR SERVIÇO</Text>
