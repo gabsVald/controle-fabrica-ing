@@ -1,5 +1,5 @@
 import React, { useContext, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,7 +52,6 @@ export default function HistoricoFuncionarioScreen({ navigation }) {
         _timestamp: pc.id ? parseInt(pc.id) : 0,
       }));
 
-    // ✅ Ordena por timestamp real (mais recente primeiro) em vez de só inverter o array
     return [...servicos, ...manutencao, ...compras].sort((a, b) => b._timestamp - a._timestamp);
   }, [registrosPonto, chamados, solicitacoesCompra, loggedUser]);
 
@@ -70,9 +69,21 @@ export default function HistoricoFuncionarioScreen({ navigation }) {
           </Text>
         </View>
       </View>
+      
       {item.descricao && (
         <Text style={[styles.desc, isDarkMode && styles.textGray]}>{item.descricao}</Text>
       )}
+
+      {/* ✅ Evidência fotográfica no histórico individual */}
+      {(item.fotoEntrega || item.foto) ? (
+        <View style={styles.fotoContainer}>
+          <Image 
+            source={{ uri: item.fotoEntrega || item.foto }} 
+            style={styles.fotoHistorico} 
+            resizeMode="contain" 
+          />
+        </View>
+      ) : null}
     </View>
   );
 
@@ -107,5 +118,9 @@ const styles = StyleSheet.create({
   desc: { marginTop: 10, fontSize: 13, color: '#475569', fontStyle: 'italic', borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 8 },
   textWhite: { color: '#f8fafc' },
   textGray: { color: '#94a3b8' },
-  empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' }
+  empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' },
+  
+  // ✅ Estilo padronizado da foto
+  fotoContainer: { marginTop: 15 },
+  fotoHistorico: { width: '100%', height: 250, borderRadius: 12, backgroundColor: '#0f172a' }
 });

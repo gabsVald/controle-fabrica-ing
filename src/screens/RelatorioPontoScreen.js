@@ -1,5 +1,5 @@
 import React, { useContext, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, Alert, Platform, Image } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { Search, Trash2, Trash } from 'lucide-react-native';
@@ -51,7 +51,7 @@ export default function RelatorioPontoScreen() {
       <Text style={[styles.info, isDarkMode && styles.textGray]}>{item.setor} › {item.subsetor}</Text>
       <View style={styles.row}>
         <Text style={[styles.time, isDarkMode && styles.textDark]}>Entrada: {item.horaEntrada}</Text>
-        <Text style={[styles.time, isDarkMode && styles.textDark]}>Saída: {item.saida || '--:--'}</Text>
+        <Text style={[styles.time, isDarkMode && styles.textDark]}>Saída: {item.saida || item.horaSaida || '--:--'}</Text>
       </View>
       <View style={styles.cardFooter}>
         <Text style={styles.date}>{item.data}</Text>
@@ -59,12 +59,23 @@ export default function RelatorioPontoScreen() {
           <Trash2 size={18} color="#ef4444" />
         </TouchableOpacity>
       </View>
+
+      {/* ✅ Foto da entrega no relatório com regra de não esticar */}
+      {item.fotoEntrega ? (
+        <View style={styles.fotoContainer}>
+          <Text style={styles.fotoLabel}>Evidência do Trabalho:</Text>
+          <Image 
+            source={{ uri: item.fotoEntrega }} 
+            style={styles.fotoRelatorio} 
+            resizeMode="contain" 
+          />
+        </View>
+      ) : null}
     </View>
   );
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
-      {/* ✅ onBack removido — o logout já está no botão de saída dentro do HeaderApp */}
       <HeaderApp title="Relatórios" />
       <View style={{ padding: 15 }}>
         <View style={[styles.searchBar, isDarkMode && styles.searchBarDark]}>
@@ -121,5 +132,10 @@ const styles = StyleSheet.create({
   btnTrashIndividual: { padding: 5, backgroundColor: '#fee2e2', borderRadius: 8 },
   textDark: { color: '#f8fafc' },
   textGray: { color: '#a1a1aa' },
-  empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' }
+  empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' },
+  
+  // ✅ Estilo padronizado da foto
+  fotoContainer: { marginTop: 15, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 15 },
+  fotoLabel: { fontSize: 11, color: '#94a3b8', marginBottom: 8, fontWeight: 'bold' },
+  fotoRelatorio: { width: '100%', height: 250, borderRadius: 10, backgroundColor: '#0f172a' }
 });
