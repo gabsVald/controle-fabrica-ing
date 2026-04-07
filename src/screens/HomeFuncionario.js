@@ -1,10 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, Platform, ScrollView } from 'react-native';
 import { AppContext } from '../context/AppContext';
-import { Sun, Moon, LogOut, MapPin } from 'lucide-react-native'; // Lucide aqui
+import { Sun, Moon, LogOut, MapPin, Camera } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function HomeFuncionario({ navigation }) {
-  const { loggedUser, setLoggedUser, statusPonto, dadosAtividade, isDarkMode, setIsDarkMode } = useContext(AppContext);
+  const { loggedUser, setLoggedUser, statusPonto, dadosAtividade, setDadosAtividade, isDarkMode, setIsDarkMode } = useContext(AppContext);
   const [timer, setTimer] = useState('00:00:00');
 
   useEffect(() => {
@@ -25,14 +26,38 @@ export default function HomeFuncionario({ navigation }) {
     return () => clearInterval(interval);
   }, [statusPonto, dadosAtividade]);
 
+  // ✅ Função para registrar foto no meio do serviço
+  const tirarFotoIntermediaria = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Erro", "Precisamos de acesso à câmera.");
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.1,
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      setDadosAtividade({ 
+        ...dadosAtividade, 
+        fotoProvisoria: `data:image/jpeg;base64,${result.assets[0].base64}` 
+      });
+      Alert.alert("Sucesso", "Evidência registrada! Ela será carregada na finalização.");
+    }
+  };
+
   const fazerLogout = () => {
+    const msg = "Deseja sair?";
     if (Platform.OS === 'web') {
-      if (window.confirm("Deseja sair?")) {
+      if (window.confirm(msg)) {
         setLoggedUser(null);
         navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
       }
     } else {
-      Alert.alert("Sair", "Deseja sair?", [
+      Alert.alert("Sair", msg, [
         { text: "Cancelar", style: "cancel" },
         { text: "Sair", style: "destructive", onPress: () => {
           setLoggedUser(null);
@@ -53,30 +78,44 @@ export default function HomeFuncionario({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.header}>
-        <Text style={[styles.welcome, isDarkMode && styles.textWhite]}>Olá, {loggedUser?.nome}!</Text>
-        <Text style={[styles.date, isDarkMode && styles.textGray]}>{new Date().toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'})}</Text>
-      </View>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+        <View style={styles.header}>
+          <Text style={[styles.welcome, isDarkMode && styles.textWhite]}>Olá, {loggedUser?.nome}!</Text>
+          <Text style={[styles.date, isDarkMode && styles.textGray]}>
+            {new Date().toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'})}
+          </Text>
+        </View>
 
-      <View style={[styles.card, statusPonto === 'trabalhando' ? styles.cardActive : (isDarkMode ? styles.cardDark : styles.cardInactive)]}>
-        <Text style={styles.label}>{statusPonto === 'trabalhando' ? 'EM ATIVIDADE' : 'SISTEMA AGUARDANDO'}</Text>
-        <Text style={[styles.timer, statusPonto === 'trabalhando' ? styles.timerActive : (isDarkMode && styles.timerDark)]}>
-          {statusPonto === 'trabalhando' ? timer : '--:--'}
-        </Text>
+        <View style={[styles.card, statusPonto === 'trabalhando' ? styles.cardActive : (isDarkMode ? styles.cardDark : styles.cardInactive)]}>
+          <Text style={styles.label}>{statusPonto === 'trabalhando' ? 'EM ATIVIDADE' : 'SISTEMA AGUARDANDO'}</Text>
+          <Text style={[styles.timer, statusPonto === 'trabalhando' ? styles.timerActive : (isDarkMode && styles.timerDark)]}>
+            {statusPonto === 'trabalhando' ? timer : '--:--'}
+          </Text>
+          {statusPonto === 'trabalhando' && (
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <MapPin size={16} color="#94a3b8" />
+              <Text style={styles.info}> {dadosAtividade.setor} › {dadosAtividade.subsetor}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ✅ Botão de Foto Intermediária - Só aparece se estiver trabalhando */}
         {statusPonto === 'trabalhando' && (
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <MapPin size={16} color="#94a3b8" />
-            <Text style={styles.info}> {dadosAtividade.setor} › {dadosAtividade.subsetor}</Text>
-          </View>
+          <TouchableOpacity style={styles.btnFotoMeio} onPress={tirarFotoIntermediaria}>
+            <Camera size={24} color="#fff" />
+            <Text style={styles.btnTextFoto}>
+              {dadosAtividade.fotoProvisoria ? "FOTO REGISTRADA (TROCAR?)" : "REGISTRAR EVIDÊNCIA"}
+            </Text>
+          </TouchableOpacity>
         )}
-      </View>
 
-      <TouchableOpacity
-        style={[styles.btnAction, statusPonto === 'ausente' ? styles.bgGreen : styles.bgRed]}
-        onPress={() => navigation.navigate(statusPonto === 'ausente' ? 'PontoEntrada' : 'PontoSaida')}
-      >
-        <Text style={styles.btnText}>{statusPonto === 'ausente' ? 'REGISTRAR ENTRADA' : 'REGISTRAR SAÍDA'}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.btnAction, statusPonto === 'ausente' ? styles.bgGreen : styles.bgRed]}
+          onPress={() => navigation.navigate(statusPonto === 'ausente' ? 'PontoEntrada' : 'PontoSaida')}
+        >
+          <Text style={styles.btnText}>{statusPonto === 'ausente' ? 'REGISTRAR ENTRADA' : 'REGISTRAR SAÍDA'}</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -89,7 +128,7 @@ const styles = StyleSheet.create({
   header: { marginTop: 40, marginBottom: 30, alignItems: 'center' },
   welcome: { fontSize: 26, fontWeight: '900', textAlign: 'center' },
   date: { fontSize: 14, color: '#64748b', textAlign: 'center', marginTop: 5 },
-  card: { padding: 30, borderRadius: 25, alignItems: 'center', marginBottom: 40, elevation: 4 },
+  card: { padding: 30, borderRadius: 25, alignItems: 'center', marginBottom: 20, elevation: 4 },
   cardInactive: { backgroundColor: '#fff' },
   cardDark: { backgroundColor: '#1e1e1e' },
   cardActive: { backgroundColor: '#1e293b' },
@@ -98,10 +137,13 @@ const styles = StyleSheet.create({
   timerActive: { color: '#38bdf8' },
   timerDark: { color: '#52525b' },
   info: { color: '#94a3b8', fontWeight: 'bold', marginLeft: 5 },
-  btnAction: { padding: 25, borderRadius: 20, alignItems: 'center' },
+  btnAction: { padding: 22, borderRadius: 20, alignItems: 'center' },
   bgGreen: { backgroundColor: '#16a34a' },
   bgRed: { backgroundColor: '#ef4444' },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
   textWhite: { color: '#ffffff' },
-  textGray: { color: '#a1a1aa' }
+  textGray: { color: '#a1a1aa' },
+  // Estilo do novo botão
+  btnFotoMeio: { flexDirection: 'row', backgroundColor: '#6366f1', padding: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 15 },
+  btnTextFoto: { color: '#fff', fontWeight: 'bold', marginLeft: 10, fontSize: 14 }
 });

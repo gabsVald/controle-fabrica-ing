@@ -15,7 +15,13 @@ export default function PontoSaidaScreen({ navigation }) {
 
   const [passo, setPasso] = useState(1);
   const [tipoFinalizacao, setTipoFinalizacao] = useState(''); 
-  const [detalhes, setDetalhes] = useState({ descricao: '', prioridade: 'Média', foto: null });
+  
+  // ✅ Inicializa com a foto capturada anteriormente, se houver
+  const [detalhes, setDetalhes] = useState({ 
+    descricao: '', 
+    prioridade: 'Média', 
+    foto: dadosAtividade?.fotoProvisoria || null 
+  });
   const [enviando, setEnviando] = useState(false);
 
   const tirarFoto = async () => {
@@ -49,7 +55,8 @@ export default function PontoSaidaScreen({ navigation }) {
       const horaSaida = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
       const novosRegistros = registrosPonto.map(r => {
-        if (r.status === 'trabalhando' && (r.nome === loggedUser?.nome || r.usuario === loggedUser?.nome)) {
+        const nomeR = r.nome || r.usuario;
+        if (r.status === 'trabalhando' && nomeR === loggedUser?.nome) {
           return { 
             ...r, 
             horaSaida, 
@@ -75,7 +82,7 @@ export default function PontoSaidaScreen({ navigation }) {
       }
 
       setStatusPonto('ausente');
-      setDadosAtividade({ inicio: null, setor: '', subsetor: '' });
+      setDadosAtividade({ inicio: null, setor: '', subsetor: '', fotoProvisoria: null });
       Alert.alert("Sucesso", "Atividade registrada!");
       navigation.navigate('MainFunc');
     } catch (error) {
@@ -128,7 +135,6 @@ export default function PontoSaidaScreen({ navigation }) {
               </View>
             )}
 
-            {/* ✅ Preview da foto com regra de não esticar */}
             {detalhes.foto && (
               <Image source={{ uri: detalhes.foto }} style={styles.fotoDisplay} resizeMode="contain" />
             )}
@@ -167,6 +173,5 @@ const styles = StyleSheet.create({
   prioridadeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   pBtn: { padding: 10, borderRadius: 8, backgroundColor: '#e2e8f0', width: '30%', alignItems: 'center' },
   pBtnActive: { backgroundColor: '#2563eb' },
-  // ✅ Estilo padronizado para fotos
   fotoDisplay: { width: '100%', height: 250, borderRadius: 12, marginBottom: 15, backgroundColor: '#0f172a' }
 });
