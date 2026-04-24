@@ -49,20 +49,20 @@ export default function HomeFuncionario({ navigation }) {
     }
   };
 
-  const fazerLogout = () => {
+    const fazerLogout = async () => {
     const msg = "Deseja sair?";
+    const confirmLogout = async () => {
+      await AsyncStorage.removeItem('@user'); // ✅ Limpa sessão do disco
+      setLoggedUser(null);
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    };
+
     if (Platform.OS === 'web') {
-      if (window.confirm(msg)) {
-        setLoggedUser(null);
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-      }
+      if (window.confirm(msg)) confirmLogout();
     } else {
       Alert.alert("Sair", msg, [
         { text: "Cancelar", style: "cancel" },
-        { text: "Sair", style: "destructive", onPress: () => {
-          setLoggedUser(null);
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        }}
+        { text: "Sair", style: "destructive", onPress: confirmLogout }
       ]);
     }
   };
