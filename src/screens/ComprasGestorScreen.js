@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert, Platform, TextInput } from 'react-native'; 
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert, Platform, TextInput, Image, Modal } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { CheckCircle, XCircle, Trash2, Clock, Calendar } from 'lucide-react-native';
@@ -7,15 +7,16 @@ import { CheckCircle, XCircle, Trash2, Clock, Calendar } from 'lucide-react-nati
 export default function ComprasGestorScreen() {
   const { solicitacoesCompra, setSolicitacoesCompra, isDarkMode } = useContext(AppContext);
   const [obsText, setObsText] = useState({}); // Estado para controlar o texto da OBS de cada card
+  const [fotoExpandida, setFotoExpandida] = useState(null);
 
   const atualizarStatus = (id, novoStatus) => {
     const agora = new Date().toLocaleString('pt-BR');
-    const novos = solicitacoesCompra.map(p => 
-      p.id === id ? { 
-        ...p, 
-        status: novoStatus, 
-        dataResposta: agora, 
-        observacaoGestor: obsText[id] || '' 
+    const novos = solicitacoesCompra.map(p =>
+      p.id === id ? {
+        ...p,
+        status: novoStatus,
+        dataResposta: agora,
+        observacaoGestor: obsText[id] || ''
       } : p
     );
     setSolicitacoesCompra(novos);
@@ -67,6 +68,14 @@ export default function ComprasGestorScreen() {
         )}
       </View>
 
+      {/* Exibição da Foto se houver */}
+      {item.fotoUrl && (
+        <TouchableOpacity onPress={() => setFotoExpandida(item.fotoUrl)} style={styles.fotoContainer}>
+          <Text style={[styles.fotoLabel, isDarkMode && styles.textWhite]}>Foto da Peça:</Text>
+          <Image source={{ uri: item.fotoUrl }} style={styles.imagemPreview} />
+        </TouchableOpacity>
+      )}
+
       {/* Campo de Observação */}
       {item.status === 'Pendente' ? (
         <View style={styles.obsSection}>
@@ -107,13 +116,25 @@ export default function ComprasGestorScreen() {
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
       <HeaderApp title="Gestão de Compras" />
-      <FlatList 
-        data={solicitacoesCompra} 
-        keyExtractor={item => item.id} 
-        renderItem={renderItem} 
-        contentContainerStyle={{ padding: 20 }} 
-        ListEmptyComponent={<Text style={[styles.emptyText, isDarkMode && styles.textWhite]}>Sem solicitações.</Text>} 
+      <FlatList
+        data={solicitacoesCompra}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ padding: 20 }}
+        ListEmptyComponent={<Text style={[styles.emptyText, isDarkMode && styles.textWhite]}>Sem solicitações.</Text>}
       />
+
+      {/* Modal para exibir a foto em tela cheia */}
+      <Modal visible={!!fotoExpandida} transparent={true} animationType="fade" onRequestClose={() => setFotoExpandida(null)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalClose} onPress={() => setFotoExpandida(null)}>
+            <XCircle size={32} color="#fff" />
+          </TouchableOpacity>
+          {fotoExpandida && (
+            <Image source={{ uri: fotoExpandida }} style={styles.imagemExpandida} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -133,11 +154,11 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 12, color: '#94a3b8' },
   obsSection: { marginTop: 10 },
   obsLabel: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 5 },
-  inputObs: { 
-    backgroundColor: '#f1f5f9', 
-    borderRadius: 10, 
-    padding: 10, 
-    height: 60, 
+  inputObs: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 10,
+    padding: 10,
+    height: 60,
     textAlignVertical: 'top',
     fontSize: 14
   },
@@ -149,5 +170,11 @@ const styles = StyleSheet.create({
   btnRejeitar: { backgroundColor: '#ef4444', flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center' },
   btnText: { color: '#fff', fontWeight: 'bold', marginLeft: 8 },
   emptyText: { textAlign: 'center', marginTop: 50, color: '#94a3b8' },
-  textWhite: { color: '#ffffff' }
+  textWhite: { color: '#ffffff' },
+  fotoContainer: { marginTop: 10 },
+  fotoLabel: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 5 },
+  imagemPreview: { width: '100%', height: 150, borderRadius: 10, backgroundColor: '#e2e8f0' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  modalClose: { position: 'absolute', top: 40, right: 20, zIndex: 10 },
+  imagemExpandida: { width: '90%', height: '80%' }
 });

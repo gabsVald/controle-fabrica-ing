@@ -12,8 +12,8 @@ export default function RelatorioPontoScreen() {
   const dadosFiltrados = useMemo(() => {
     return registrosPonto.filter(item => {
       const nomeUsuario = item.usuario || item.nome || "";
-      const matchesBusca = nomeUsuario.toLowerCase().includes(busca.toLowerCase()) || 
-                           item.setor.toLowerCase().includes(busca.toLowerCase());
+      const matchesBusca = nomeUsuario.toLowerCase().includes(busca.toLowerCase()) ||
+        item.setor.toLowerCase().includes(busca.toLowerCase());
       const matchesStatus = filtroStatus === 'todos' || item.status.toLowerCase() === filtroStatus.toLowerCase();
       return matchesBusca && matchesStatus;
     });
@@ -48,7 +48,9 @@ export default function RelatorioPontoScreen() {
         <Text style={[styles.userName, isDarkMode && styles.textDark]}>{item.usuario || item.nome}</Text>
         <Text style={styles.statusBadge}>{item.status}</Text>
       </View>
-      <Text style={[styles.info, isDarkMode && styles.textGray]}>{item.setor} › {item.subsetor}</Text>
+      <Text style={[styles.info, isDarkMode && styles.textGray]}>
+        {item.setor} › {item.subsetor} {item.observacao ? `› ${item.observacao}` : ''}
+      </Text>
       <View style={styles.row}>
         <Text style={[styles.time, isDarkMode && styles.textDark]}>Entrada: {item.horaEntrada}</Text>
         <Text style={[styles.time, isDarkMode && styles.textDark]}>Saída: {item.saida || item.horaSaida || '--:--'}</Text>
@@ -64,10 +66,10 @@ export default function RelatorioPontoScreen() {
       {item.fotoEntrega ? (
         <View style={styles.fotoContainer}>
           <Text style={styles.fotoLabel}>Evidência do Trabalho:</Text>
-          <Image 
-            source={{ uri: item.fotoEntrega }} 
-            style={styles.fotoRelatorio} 
-            resizeMode="contain" 
+          <Image
+            source={{ uri: item.fotoEntrega }}
+            style={styles.fotoRelatorio}
+            resizeMode="contain"
           />
         </View>
       ) : null}
@@ -80,7 +82,7 @@ export default function RelatorioPontoScreen() {
       <View style={{ padding: 15 }}>
         <View style={[styles.searchBar, isDarkMode && styles.searchBarDark]}>
           <Search size={20} color="#94a3b8" />
-          <TextInput 
+          <TextInput
             style={[styles.input, isDarkMode && styles.textDark]}
             placeholder="Buscar..."
             placeholderTextColor="#94a3b8"
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
   textDark: { color: '#f8fafc' },
   textGray: { color: '#a1a1aa' },
   empty: { textAlign: 'center', marginTop: 50, color: '#94a3b8' },
-  
+
   // ✅ Estilo padronizado da foto
   fotoContainer: { marginTop: 15, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 15 },
   fotoLabel: { fontSize: 11, color: '#94a3b8', marginBottom: 8, fontWeight: 'bold' },

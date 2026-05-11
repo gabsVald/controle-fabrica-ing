@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, TextInput } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 
@@ -9,15 +9,18 @@ const gerarId = () => Date.now().toString() + Math.random().toString(36).slice(2
 export default function PontoEntradaScreen({ navigation }) {
   const { setores, setRegistrosPonto, registrosPonto, setStatusPonto, setDadosAtividade, loggedUser, isDarkMode } = useContext(AppContext);
   const [setorObjeto, setSetorObjeto] = useState(null);
+  const [subsetorSelecionado, setSubsetorSelecionado] = useState(null);
+  const [observacaoGeral, setObservacaoGeral] = useState('');
 
-  const confirmarEntrada = (nomeSetor, nomeSub) => {
+  const confirmarEntrada = (nomeSetor, nomeSub, obs = '') => {
     const agora = new Date();
     const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-    setDadosAtividade({ 
-      inicio: agora.toISOString(), 
-      setor: nomeSetor, 
-      subsetor: nomeSub 
+    setDadosAtividade({
+      inicio: agora.toISOString(),
+      setor: nomeSetor,
+      subsetor: nomeSub,
+      observacao: obs
     });
 
     const novo = {
@@ -27,6 +30,7 @@ export default function PontoEntradaScreen({ navigation }) {
       horaEntrada: horaFormatada,
       setor: nomeSetor,
       subsetor: nomeSub,
+      observacao: obs,
       status: 'trabalhando'
     };
 
@@ -36,10 +40,20 @@ export default function PontoEntradaScreen({ navigation }) {
   };
 
   const handlePressSetor = (s) => {
-    if (s.subsetores && s.subsetores.length === 1) {
+    if (s.subsetores && s.subsetores.length === 1 && s.subsetores[0] !== 'Geral') {
       confirmarEntrada(s.nome, s.subsetores[0]);
     } else {
       setSetorObjeto(s);
+      setSubsetorSelecionado(null);
+      setObservacaoGeral('');
+    }
+  };
+
+  const handlePressSubsetor = (sub) => {
+    if (sub === 'Geral') {
+      setSubsetorSelecionado(sub);
+    } else {
+      confirmarEntrada(setorObjeto.nome, sub);
     }
   };
 
@@ -61,13 +75,34 @@ export default function PontoEntradaScreen({ navigation }) {
                 <Text style={[styles.cardText, isDarkMode && styles.textWhite]}>{s.nome}</Text>
               </TouchableOpacity>
             ))
+          ) : subsetorSelecionado === 'Geral' ? (
+            <View style={{ width: '100%', paddingHorizontal: 10 }}>
+              <Text style={[styles.labelObs, isDarkMode && styles.textWhite]}>Observação (Opcional):</Text>
+              <TextInput
+                style={[styles.inputObs, isDarkMode && styles.inputDark]}
+                placeholder="Ex: Tarefa específica..."
+                placeholderTextColor="#94a3b8"
+                value={observacaoGeral}
+                onChangeText={setObservacaoGeral}
+                multiline
+              />
+              <TouchableOpacity
+                style={styles.btnConfirmar}
+                onPress={() => confirmarEntrada(setorObjeto.nome, 'Geral', observacaoGeral)}
+              >
+                <Text style={styles.textWhite}>Confirmar Entrada</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.btnVoltar} onPress={() => setSubsetorSelecionado(null)}>
+                <Text style={styles.textVoltar}>← Voltar</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <>
               {setorObjeto.subsetores.map((sub, index) => (
                 <TouchableOpacity
                   key={index}
                   style={[styles.card, styles.cardSub]}
-                  onPress={() => confirmarEntrada(setorObjeto.nome, sub)}
+                  onPress={() => handlePressSubsetor(sub)}
                 >
                   <Text style={styles.textWhite}>{sub}</Text>
                 </TouchableOpacity>
@@ -89,7 +124,7 @@ const styles = StyleSheet.create({
   container: { padding: 20 },
   title: { fontSize: 24, fontWeight: '900', marginBottom: 20, textAlign: 'center', color: '#1e293b' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  card: { 
+  card: {
     width: '48%', height: 100, backgroundColor: '#fff', borderRadius: 15,
     justifyContent: 'center', alignItems: 'center', marginBottom: 15,
     elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -100,5 +135,9 @@ const styles = StyleSheet.create({
   cardText: { fontWeight: 'bold', color: '#1e293b', textAlign: 'center', paddingHorizontal: 5 },
   textWhite: { color: '#ffffff', fontWeight: 'bold', textAlign: 'center' },
   btnVoltar: { width: '100%', alignItems: 'center', padding: 20 },
-  textVoltar: { color: '#64748b', fontWeight: 'bold' }
+  textVoltar: { color: '#64748b', fontWeight: 'bold' },
+  labelObs: { fontWeight: 'bold', color: '#1e293b', marginBottom: 10, fontSize: 16 },
+  inputObs: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 15, minHeight: 80, textAlignVertical: 'top', color: '#1e293b', marginBottom: 20 },
+  inputDark: { backgroundColor: '#1e1e1e', borderColor: '#333', color: '#fff' },
+  btnConfirmar: { backgroundColor: '#16a34a', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 10 }
 });
