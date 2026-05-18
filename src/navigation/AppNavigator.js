@@ -6,7 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AppContext } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
-import { Home, Wrench, Clock, History, ShoppingCart, FileText, AlertTriangle } from 'lucide-react-native';
+import { Home, Wrench, Clock, History, ShoppingCart, FileText, AlertTriangle, Folder } from 'lucide-react-native';
 
 import LoginScreen from '../screens/LoginScreen';
 import CadastroScreen from '../screens/CadastroScreen';
@@ -19,6 +19,7 @@ import ChamadosScreen from '../screens/ChamadosScreen';
 import ComprasGestorScreen from '../screens/ComprasGestorScreen';
 import RelatorioPontoScreen from '../screens/RelatorioPontoScreen';
 import HistoricoFuncionarioScreen from '../screens/HistoricoFuncionarioScreen';
+import WorkspaceGestorScreen from '../screens/WorkspaceGestorScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,11 +51,11 @@ function EmployeeTabs() {
         }
       }}
     >
-      <Tab.Screen name="Início" component={HomeFuncionario} options={{ tabBarIcon: ({color}) => <Home color={color} size={24}/> }} />
-      <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({color}) => <Wrench color={color} size={24}/> }} />
-      <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <Clock color={color} size={24}/> }} />
-      <Tab.Screen name="Histórico" component={HistoricoFuncionarioScreen} options={{ tabBarIcon: ({color}) => <History color={color} size={24}/> }} />
-      <Tab.Screen name="Compras" component={ComprasScreen} options={{ tabBarIcon: ({color}) => <ShoppingCart color={color} size={24}/> }} />
+      <Tab.Screen name="Início" component={HomeFuncionario} options={{ tabBarIcon: ({ color }) => <Home color={color} size={24} /> }} />
+      <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({ color }) => <Wrench color={color} size={24} /> }} />
+      <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({ color }) => <Clock color={color} size={24} /> }} />
+      <Tab.Screen name="Histórico" component={HistoricoFuncionarioScreen} options={{ tabBarIcon: ({ color }) => <History color={color} size={24} /> }} />
+      <Tab.Screen name="Compras" component={ComprasScreen} options={{ tabBarIcon: ({ color }) => <ShoppingCart color={color} size={24} /> }} />
     </Tab.Navigator>
   );
 }
@@ -74,32 +75,39 @@ function ManagerTabs() {
         }
       }}
     >
-      <Tab.Screen name="Relatórios" component={RelatorioPontoScreen} options={{ tabBarIcon: ({color}) => <FileText color={color} size={24}/> }} />
-      <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({color}) => <Wrench color={color} size={24}/> }} />
-      <Tab.Screen name="Meu Histórico" component={HistoricoFuncionarioScreen} options={{ tabBarIcon: ({color}) => <History color={color} size={24}/> }} />
-      <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({color}) => <AlertTriangle color={color} size={24}/> }} />
-      <Tab.Screen name="Compras" component={ComprasGestorScreen} options={{ tabBarIcon: ({color}) => <ShoppingCart color={color} size={24}/> }} />
+      <Tab.Screen name="Relatórios" component={RelatorioPontoScreen} options={{ tabBarIcon: ({ color }) => <FileText color={color} size={24} /> }} />
+      <Tab.Screen name="Chamados" component={ChamadosScreen} options={{ tabBarIcon: ({ color }) => <Wrench color={color} size={24} /> }} />
+      <Tab.Screen name="Meu Histórico" component={HistoricoFuncionarioScreen} options={{ tabBarIcon: ({ color }) => <History color={color} size={24} /> }} />
+      <Tab.Screen name="Pendentes" component={ServicosScreen} options={{ tabBarIcon: ({ color }) => <AlertTriangle color={color} size={24} /> }} />
+      <Tab.Screen name="Compras" component={ComprasGestorScreen} options={{ tabBarIcon: ({ color }) => <ShoppingCart color={color} size={24} /> }} />
+      <Tab.Screen name="Workspace" component={WorkspaceGestorScreen} options={{ tabBarIcon: ({ color }) => <Folder color={color} size={24} /> }} />
     </Tab.Navigator>
   );
 }
 
 export default function AppNavigator() {
-  const { isFirebaseLoaded, isDarkMode } = useContext(AppContext);
+  const { isFirebaseLoaded, isDarkMode, loggedUser } = useContext(AppContext);
 
   // ✅ Enquanto o Firebase não carregou, mostra tela de loading
   if (!isFirebaseLoaded) {
     return <LoadingScreen isDarkMode={isDarkMode} />;
   }
 
+  // ✅ Define a tela inicial baseado no login salvo
+  const telaInicial = loggedUser 
+    ? (loggedUser.perfil === 'gestor' ? 'MainGestor' : 'MainFunc') 
+    : 'Login';
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={telaInicial}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Cadastro" component={CadastroScreen} />
         <Stack.Screen name="MainFunc" component={EmployeeTabs} />
         <Stack.Screen name="MainGestor" component={ManagerTabs} />
         <Stack.Screen name="PontoEntrada" component={PontoEntradaScreen} />
         <Stack.Screen name="PontoSaida" component={PontoSaidaScreen} />
+        <Stack.Screen name="NovaCompra" component={ComprasScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

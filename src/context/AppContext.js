@@ -1,9 +1,10 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, Platform } from 'react-native';
 import { initialUsers } from '../data/data';
 import { setoresDB } from '../data/setoresDB';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '../config/firebase'; 
+import { db } from '../config/firebase';
 
 export const AppContext = createContext();
 
@@ -16,12 +17,14 @@ export const AppProvider = ({ children }) => {
   const [registrosPonto, setRegistrosPonto] = useState([]);
   const [servicosIncompletos, setServicosIncompletos] = useState([]);
   const [solicitacoesCompra, setSolicitacoesCompra] = useState([]);
-  const [chamados, setChamados] = useState([]); 
+  const [chamados, setChamados] = useState([]);
+  const [workspaceItems, setWorkspaceItems] = useState([]);
 
-  const [statusPonto, setStatusPonto] = useState('ausente'); 
-  const [dadosAtividade, setDadosAtividade] = useState({ inicio: null, setor: '', subsetor: '', fotoProvisoria: null });
+  const [statusPonto, setStatusPonto] = useState('ausente');
+  const [dadosAtividade, setDadosAtividade] = useState({ inicio: null, setor: '', subsetor: '', fotoProvisoria: null, observacaoServico: '' });
 
   const [isFirebaseLoaded, setIsFirebaseLoaded] = useState(false);
+  const [notifiedTasks, setNotifiedTasks] = useState([]);
   const isPrimeiroLoad = useRef(true);
   const isLocalLoadedRef = useRef(false);
 
@@ -35,6 +38,7 @@ export const AppProvider = ({ children }) => {
         if (dadosNuvem.servicosIncompletos) setServicosIncompletos(dadosNuvem.servicosIncompletos);
         if (dadosNuvem.solicitacoesCompra) setSolicitacoesCompra(dadosNuvem.solicitacoesCompra);
         if (dadosNuvem.chamados) setChamados(dadosNuvem.chamados);
+        if (dadosNuvem.workspaceItems) setWorkspaceItems(dadosNuvem.workspaceItems);
         setUsersList(dadosNuvem.usersList || initialUsers);
       }
       setIsFirebaseLoaded(true);
@@ -46,10 +50,12 @@ export const AppProvider = ({ children }) => {
         const theme = await AsyncStorage.getItem('@theme');
         const ativ = await AsyncStorage.getItem('@atividade');
         const userSaved = await AsyncStorage.getItem('@user'); // ✅ Recupera a sessão
-        
+        const savedNotified = await AsyncStorage.getItem('@notifiedTasks'); // ✅ Recupera tarefas notificadas
+
         if (theme) setIsDarkMode(JSON.parse(theme));
         if (userSaved) setLoggedUser(JSON.parse(userSaved)); // ✅ Restaura o login
-        
+        if (savedNotified) setNotifiedTasks(JSON.parse(savedNotified));
+
         if (ativ) {
           const act = JSON.parse(ativ);
           setDadosAtividade(act);
@@ -71,7 +77,7 @@ export const AppProvider = ({ children }) => {
     if (isLocalLoadedRef.current) {
       AsyncStorage.setItem('@atividade', JSON.stringify(dadosAtividade));
       AsyncStorage.setItem('@theme', JSON.stringify(isDarkMode));
-      
+
       if (loggedUser) {
         AsyncStorage.setItem('@user', JSON.stringify(loggedUser)); // ✅ Mantém logado
       } else {
@@ -85,18 +91,43 @@ export const AppProvider = ({ children }) => {
     const salvarNaNuvem = async () => {
       try {
         const docRef = doc(db, "banco_ing", "dados_globais");
-        await setDoc(docRef, { registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, usersList }, { merge: true });
+        await setDoc(docRef, { registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, workspaceItems, usersList }, { merge: true });
       } catch (e) { console.error("Firebase Sync Error:", e); }
     };
     salvarNaNuvem();
-  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, usersList]);
+  }, [registrosPonto, servicosIncompletos, solicitacoesCompra, chamados, workspaceItems, usersList]);
+
+  // ✅ Verifica tarefas designadas ao usuário logado e exibe notificação
+  useEffect(() => {
+    if (!loggedUser || loggedUser.perfil === 'gestor' || !chamados.length || !isLocalLoadedRef.current) return;
+
+    let updatedNotified = [...notifiedTasks];
+    let hasNew = false;
+
+    chamados.forEach(chamado => {
+      if (chamado.atribuidoA === loggedUser.nome && !updatedNotified.includes(chamado.id)) {
+        if (Platform.OS === 'web') {
+          window.alert(`Nova Tarefa! ${chamado.setor} - ${chamado.descricao}`);
+        } else {
+          Alert.alert("Nova Tarefa!", `${chamado.setor} - ${chamado.descricao}`);
+        }
+        updatedNotified.push(chamado.id);
+        hasNew = true;
+      }
+    });
+
+    if (hasNew) {
+      setNotifiedTasks(updatedNotified);
+      AsyncStorage.setItem('@notifiedTasks', JSON.stringify(updatedNotified));
+    }
+  }, [chamados, loggedUser]);
 
   return (
     <AppContext.Provider value={{
       isDarkMode, setIsDarkMode, usersList, setUsersList,
       loggedUser, setLoggedUser, setores, registrosPonto, setRegistrosPonto,
       servicosIncompletos, setServicosIncompletos, solicitacoesCompra, setSolicitacoesCompra,
-      chamados, setChamados, statusPonto, setStatusPonto, dadosAtividade, setDadosAtividade,
+      chamados, setChamados, workspaceItems, setWorkspaceItems, statusPonto, setStatusPonto, dadosAtividade, setDadosAtividade,
       isFirebaseLoaded,
     }}>
       {children}

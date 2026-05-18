@@ -1,12 +1,15 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, Platform, ScrollView, TextInput, Modal } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../context/AppContext';
-import { Sun, Moon, LogOut, MapPin, Camera } from 'lucide-react-native';
+import { Sun, Moon, LogOut, MapPin, Camera, FileText } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function HomeFuncionario({ navigation }) {
   const { loggedUser, setLoggedUser, statusPonto, dadosAtividade, setDadosAtividade, isDarkMode, setIsDarkMode } = useContext(AppContext);
   const [timer, setTimer] = useState('00:00:00');
+  const [modalObsVisivel, setModalObsVisivel] = useState(false);
+  const [textoObs, setTextoObs] = useState('');
 
   useEffect(() => {
     let interval;
@@ -25,6 +28,13 @@ export default function HomeFuncionario({ navigation }) {
     }
     return () => clearInterval(interval);
   }, [statusPonto, dadosAtividade]);
+
+  // ✅ Sincronizar observação local com dadosAtividade
+  useEffect(() => {
+    if (dadosAtividade?.observacaoServico) {
+      setTextoObs(dadosAtividade.observacaoServico);
+    }
+  }, []);
 
   // ✅ Função para registrar foto no meio do serviço
   const tirarFotoIntermediaria = async () => {
@@ -47,6 +57,16 @@ export default function HomeFuncionario({ navigation }) {
       });
       Alert.alert("Sucesso", "Evidência registrada! Ela será carregada na finalização.");
     }
+  };
+
+  // ✅ Função para salvar observação no meio do serviço
+  const salvarObservacao = () => {
+    setDadosAtividade({
+      ...dadosAtividade,
+      observacaoServico: textoObs
+    });
+    setModalObsVisivel(false);
+    Alert.alert("Sucesso", "Observação salva! Ela será incluída na finalização.");
   };
 
     const fazerLogout = async () => {
@@ -99,14 +119,23 @@ export default function HomeFuncionario({ navigation }) {
           )}
         </View>
 
-        {/* ✅ Botão de Foto Intermediária - Só aparece se estiver trabalhando */}
+        {/* ✅ Botões durante o serviço: Foto + Observação */}
         {statusPonto === 'trabalhando' && (
-          <TouchableOpacity style={styles.btnFotoMeio} onPress={tirarFotoIntermediaria}>
-            <Camera size={24} color="#fff" />
-            <Text style={styles.btnTextFoto}>
-              {dadosAtividade.fotoProvisoria ? "FOTO REGISTRADA (TROCAR?)" : "REGISTRAR EVIDÊNCIA"}
-            </Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.btnFotoMeio} onPress={tirarFotoIntermediaria}>
+              <Camera size={24} color="#fff" />
+              <Text style={styles.btnTextFoto}>
+                {dadosAtividade.fotoProvisoria ? "FOTO REGISTRADA (TROCAR?)" : "REGISTRAR EVIDÊNCIA"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.btnObsMeio} onPress={() => setModalObsVisivel(true)}>
+              <FileText size={24} color="#fff" />
+              <Text style={styles.btnTextFoto}>
+                {dadosAtividade.observacaoServico ? "OBSERVAÇÃO SALVA (EDITAR?)" : "ESCREVER OBSERVAÇÃO"}
+              </Text>
+            </TouchableOpacity>
+          </>
         )}
 
         <TouchableOpacity
@@ -116,6 +145,32 @@ export default function HomeFuncionario({ navigation }) {
           <Text style={styles.btnText}>{statusPonto === 'ausente' ? 'REGISTRAR ENTRADA' : 'REGISTRAR SAÍDA'}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* ✅ Modal para escrever observação no meio do serviço */}
+      <Modal visible={modalObsVisivel} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, isDarkMode && styles.modalContentDark]}>
+            <Text style={[styles.modalTitle, isDarkMode && styles.textWhite]}>Observação do Serviço</Text>
+            <TextInput
+              style={[styles.modalInput, isDarkMode && styles.modalInputDark]}
+              placeholder="Escreva sua observação aqui..."
+              placeholderTextColor="#94a3b8"
+              multiline
+              value={textoObs}
+              onChangeText={setTextoObs}
+              autoFocus
+            />
+            <View style={styles.modalBtns}>
+              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setModalObsVisivel(false)}>
+                <Text style={styles.btnText}>CANCELAR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalBtnSave} onPress={salvarObservacao}>
+                <Text style={styles.btnText}>SALVAR</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -143,7 +198,19 @@ const styles = StyleSheet.create({
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
   textWhite: { color: '#ffffff' },
   textGray: { color: '#a1a1aa' },
-  // Estilo do novo botão
+  // Botão de foto no meio do serviço
   btnFotoMeio: { flexDirection: 'row', backgroundColor: '#6366f1', padding: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 15 },
-  btnTextFoto: { color: '#fff', fontWeight: 'bold', marginLeft: 10, fontSize: 14 }
+  btnTextFoto: { color: '#fff', fontWeight: 'bold', marginLeft: 10, fontSize: 14 },
+  // ✅ Botão de observação no meio do serviço
+  btnObsMeio: { flexDirection: 'row', backgroundColor: '#0ea5e9', padding: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 15 },
+  // ✅ Modal de observação
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 25 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 25 },
+  modalContentDark: { backgroundColor: '#1e293b' },
+  modalTitle: { fontSize: 20, fontWeight: '900', marginBottom: 15, textAlign: 'center', color: '#1e293b' },
+  modalInput: { backgroundColor: '#f1f5f9', borderRadius: 12, padding: 15, height: 150, textAlignVertical: 'top', fontSize: 16, borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b' },
+  modalInputDark: { backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' },
+  modalBtns: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  modalBtnCancel: { backgroundColor: '#ef4444', padding: 15, borderRadius: 12, flex: 1, alignItems: 'center', marginRight: 10 },
+  modalBtnSave: { backgroundColor: '#16a34a', padding: 15, borderRadius: 12, flex: 1, alignItems: 'center', marginLeft: 10 },
 });

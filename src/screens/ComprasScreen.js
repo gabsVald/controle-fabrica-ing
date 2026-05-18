@@ -49,9 +49,9 @@ export default function ComprasScreen({ navigation }) {
         if (Platform.OS === 'web') {
           // O Firebase Storage exige configuração de CORS no servidor para aceitar uploads de navegadores Web.
           // Sem CORS, o Firebase fica tentando enviar infinitamente e trava o spinner.
-          // Para você conseguir testar no PC sem travar, usamos a imagem local diretamente.
-          console.log("Teste Web: Usando imagem local para evitar bloqueio de CORS do Firebase.");
-          fotoUrl = fotoURI;
+          // Para você conseguir testar no PC sem perder a imagem ao recarregar a página, usamos o base64 diretamente.
+          console.log("Teste Web: Usando base64 para evitar bloqueio de CORS e persistir a imagem.");
+          fotoUrl = fotoBase64.includes('base64,') ? fotoBase64 : `data:image/jpeg;base64,${fotoBase64}`;
         } else {
           // No Celular (Android/iOS), não existe CORS, então o upload funciona normalmente.
           if (fotoBase64) {

@@ -2,9 +2,9 @@ import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert, Platform, TextInput, Image, Modal } from 'react-native';
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
-import { CheckCircle, XCircle, Trash2, Clock, Calendar } from 'lucide-react-native';
+import { CheckCircle, XCircle, Trash2, Clock, Calendar, Plus } from 'lucide-react-native';
 
-export default function ComprasGestorScreen() {
+export default function ComprasGestorScreen({ navigation }) {
   const { solicitacoesCompra, setSolicitacoesCompra, isDarkMode } = useContext(AppContext);
   const [obsText, setObsText] = useState({}); // Estado para controlar o texto da OBS de cada card
   const [fotoExpandida, setFotoExpandida] = useState(null);
@@ -116,6 +116,14 @@ export default function ComprasGestorScreen() {
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.bgDark]}>
       <HeaderApp title="Gestão de Compras" />
+
+      <View style={[styles.headerActions, isDarkMode && styles.headerActionsDark]}>
+        <TouchableOpacity style={styles.btnNovaCompra} onPress={() => navigation.navigate('NovaCompra')}>
+          <Plus size={20} color="#fff" />
+          <Text style={styles.btnNovaCompraText}>Nova Solicitação</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={solicitacoesCompra}
         keyExtractor={item => item.id}
@@ -142,6 +150,10 @@ export default function ComprasGestorScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   bgDark: { backgroundColor: '#121212' },
+  headerActions: { paddingHorizontal: 20, paddingTop: 15, paddingBottom: 5, backgroundColor: '#f8fafc' },
+  headerActionsDark: { backgroundColor: '#121212' },
+  btnNovaCompra: { backgroundColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10 },
+  btnNovaCompraText: { color: '#fff', fontWeight: 'bold', marginLeft: 8 },
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 20, marginBottom: 15, elevation: 2 },
   cardDark: { backgroundColor: '#1e1e1e' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },

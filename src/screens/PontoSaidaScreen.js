@@ -16,9 +16,9 @@ export default function PontoSaidaScreen({ navigation }) {
   const [passo, setPasso] = useState(1);
   const [tipoFinalizacao, setTipoFinalizacao] = useState(''); 
   
-  // ✅ Inicializa com a foto capturada anteriormente, se houver
+  // ✅ Inicializa com a foto e observação capturadas anteriormente, se houver
   const [detalhes, setDetalhes] = useState({ 
-    descricao: '', 
+    descricao: dadosAtividade?.observacaoServico || '', 
     prioridade: 'Média', 
     foto: dadosAtividade?.fotoProvisoria || null 
   });
@@ -61,7 +61,8 @@ export default function PontoSaidaScreen({ navigation }) {
             ...r, 
             horaSaida, 
             status: tipoFinalizacao === 'completo' ? 'Concluído' : 'Pendente',
-            fotoEntrega: detalhes.foto 
+            fotoEntrega: detalhes.foto,
+            observacaoFinal: detalhes.descricao || '' 
           };
         }
         return r;
@@ -82,7 +83,7 @@ export default function PontoSaidaScreen({ navigation }) {
       }
 
       setStatusPonto('ausente');
-      setDadosAtividade({ inicio: null, setor: '', subsetor: '', fotoProvisoria: null });
+      setDadosAtividade({ inicio: null, setor: '', subsetor: '', fotoProvisoria: null, observacaoServico: '' });
       Alert.alert("Sucesso", "Atividade registrada!");
       navigation.navigate('MainFunc');
     } catch (error) {
