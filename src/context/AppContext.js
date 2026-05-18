@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, Vibration } from 'react-native';
 import { initialUsers } from '../data/data';
 import { setoresDB } from '../data/setoresDB';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -106,6 +106,11 @@ export const AppProvider = ({ children }) => {
 
     chamados.forEach(chamado => {
       if (chamado.atribuidoA === loggedUser.nome && !updatedNotified.includes(chamado.id)) {
+        // Vibra o celular por 500ms
+        if (Platform.OS !== 'web') {
+          Vibration.vibrate(500);
+        }
+
         if (Platform.OS === 'web') {
           window.alert(`Nova Tarefa! ${chamado.setor} - ${chamado.descricao}`);
         } else {
