@@ -3,19 +3,20 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Flat
 import { AppContext } from '../context/AppContext';
 import HeaderApp from '../components/HeaderApp';
 import { PlusCircle, Trash2 } from 'lucide-react-native';
-import { Picker } from '@react-native-picker/picker'; // ✅ NOVO IMPORT PARA O DROPDOWN
+import { Picker } from '@react-native-picker/picker'; 
 
 const gerarId = () => Date.now().toString() + Math.random().toString(36).slice(2);
 
 export default function ChamadosScreen({ navigation }) {
-  const { chamados, setChamados, loggedUser, isDarkMode, statusPonto, setDadosAtividade, setRegistrosPonto, registrosPonto, setStatusPonto, usersList } = useContext(AppContext);
+  // ✅ Extraindo 'enviarNotificacao' do contexto
+  const { chamados, setChamados, loggedUser, isDarkMode, statusPonto, setDadosAtividade, setRegistrosPonto, registrosPonto, setStatusPonto, usersList, enviarNotificacao } = useContext(AppContext);
   
   const [novoChamado, setNovoChamado] = useState(false);
   const [setor, setSetor] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [atribuidoA, setAtribuidoA] = useState('Todos'); // ✅ Estado do select de atribuição
+  const [atribuidoA, setAtribuidoA] = useState('Todos'); 
 
-  const criarChamado = () => {
+  const criarChamado = async () => {
     if (!setor || !descricao) return Alert.alert("Erro", "Preencha setor e descrição.");
     
     const chamado = { 
@@ -25,10 +26,24 @@ export default function ChamadosScreen({ navigation }) {
         descricao, 
         criadoPor: loggedUser.nome, 
         status: 'Aberto',
-        atribuidoA: atribuidoA === 'Todos' ? null : atribuidoA // ✅ Salva para quem foi direcionado
+        atribuidoA: atribuidoA === 'Todos' ? null : atribuidoA 
     };
     
     setChamados([chamado, ...chamados]);
+    
+    // ✅ LÓGICA DE DISPARO DA NOTIFICAÇÃO PUSH
+    if (atribuidoA !== 'Todos') {
+      const usuarioDestino = usersList.find(u => u.nome === atribuidoA);
+      // Checa se o usuário logou recentemente e possui o token salvo
+      if (usuarioDestino && usuarioDestino.expoPushToken) {
+        await enviarNotificacao(
+          usuarioDestino.expoPushToken, 
+          "⚠️ Manutenção Direcionada", 
+          `${loggedUser.nome} agendou um serviço em ${setor} para você.`
+        );
+      }
+    }
+
     setSetor(''); setDescricao(''); setAtribuidoA('Todos'); setNovoChamado(false);
     if (Platform.OS !== 'web') Alert.alert("Sucesso", "Chamado programado criado!");
   };
@@ -46,11 +61,23 @@ export default function ChamadosScreen({ navigation }) {
     }
   };
 
-  // ✅ Função para o Gestor trocar o dono do chamado sem precisar recriar
-  const atualizarAtribuicao = (id, novoUsuario) => {
+  const atualizarAtribuicao = async (id, novoUsuario) => {
     setChamados(prev => prev.map(c => 
       c.id === id ? { ...c, atribuidoA: novoUsuario === 'Todos' ? null : novoUsuario } : c
     ));
+
+    // ✅ Notifica caso a alteração de dono seja feita no card existente
+    if (novoUsuario !== 'Todos') {
+      const usuarioDestino = usersList.find(u => u.nome === novoUsuario);
+      const chamadoAlvo = chamados.find(c => c.id === id);
+      if (usuarioDestino && usuarioDestino.expoPushToken && chamadoAlvo) {
+        await enviarNotificacao(
+          usuarioDestino.expoPushToken, 
+          "🔄 Chamado Transferido", 
+          `O serviço em ${chamadoAlvo.setor} foi repassado para você.`
+        );
+      }
+    }
   };
 
   const comecarChamado = (item) => {
@@ -67,11 +94,10 @@ export default function ChamadosScreen({ navigation }) {
     navigation.navigate('Início');
   };
 
-  // ✅ Filtro Mestre: Define quem enxerga qual chamado
   const chamadosVisiveis = chamados.filter(c => {
-    if (loggedUser?.perfil === 'gestor') return true; // Gestor vê e organiza tudo
-    if (!c.atribuidoA) return true; // Se não tiver dono (livre), o funcionário vê
-    return c.atribuidoA === loggedUser?.nome; // Se tiver dono, só enxerga se for ele
+    if (loggedUser?.perfil === 'gestor') return true; 
+    if (!c.atribuidoA) return true; 
+    return c.atribuidoA === loggedUser?.nome; 
   });
 
   return (
@@ -86,7 +112,6 @@ export default function ChamadosScreen({ navigation }) {
             <Text style={[styles.label, isDarkMode && styles.textDark]}>Descrição do Serviço</Text>
             <TextInput style={[styles.input, isDarkMode && styles.inputDark]} value={descricao} onChangeText={setDescricao} multiline />
             
-            {/* ✅ Caixa de Atribuição no Cadastro */}
             {loggedUser?.perfil === 'gestor' && (
               <>
                 <Text style={[styles.label, isDarkMode && styles.textDark]}>Direcionar para (Opcional):</Text>
@@ -97,7 +122,6 @@ export default function ChamadosScreen({ navigation }) {
                     style={{ color: isDarkMode ? '#fff' : '#1e293b' }}
                   >
                     <Picker.Item label="Todos (Qualquer um pode pegar)" value="Todos" />
-                    {/* Lista dinâmica com os funcionários do sistema */}
                     {usersList.filter(u => u.perfil === 'funcionario').map(u => (
                       <Picker.Item key={u.id} label={u.nome} value={u.nome} />
                     ))}
@@ -119,7 +143,7 @@ export default function ChamadosScreen({ navigation }) {
             </TouchableOpacity>
             
             <FlatList
-              data={chamadosVisiveis} // Usa a lista filtrada segura
+              data={chamadosVisiveis} 
               keyExtractor={item => item.id}
               ListEmptyComponent={<Text style={styles.empty}>Nenhum chamado programado no momento.</Text>}
               renderItem={({ item }) => (
@@ -136,7 +160,6 @@ export default function ChamadosScreen({ navigation }) {
                     )}
                   </View>
 
-                  {/* ✅ Edição de dono do chamado (Apenas Gestor) */}
                   {loggedUser?.perfil === 'gestor' && (
                     <View style={styles.editAtribuicao}>
                       <Text style={styles.editLabel}>Atribuído a:</Text>
@@ -155,7 +178,6 @@ export default function ChamadosScreen({ navigation }) {
                     </View>
                   )}
 
-                  {/* ✅ Aviso para o Funcionário saber que o chamado é obrigatório para ele */}
                   {loggedUser?.perfil !== 'gestor' && item.atribuidoA === loggedUser?.nome && (
                     <Text style={styles.badgeDirecionado}>⚠️ Direcionado para você</Text>
                   )}
